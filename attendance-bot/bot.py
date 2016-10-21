@@ -24,4 +24,4 @@ def get_reactions(ts, channel):
     res = client.api_call(
         "reactions.get", channel=channel, timestamp=ts
     )
-    return res
+    return res.get("message").get("reactions")
