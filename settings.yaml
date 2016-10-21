@@ -1,0 +1,8 @@
+# YAML
+
+bot-token:
+bot-name: attendance-bot
+bot-emoji: memo
+google-client-id:
+google-secret:
+spreadsheet-url:
