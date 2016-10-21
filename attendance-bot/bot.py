@@ -2,26 +2,30 @@ from slackclient import SlackClient
 import yaml
 import sqlite3
 
-settings = yaml.load(open("../settings.yaml"))
+class AttendanceBot(object):
 
-token = settings.get("bot-token")
-bot_name = settings.get("bot-name")
-bot_emoji = ":{emoji}:".format(emoji=settings.get("bot-emoji"))  # wrap emoji name in colons
+    def __init__(self):
+        settings = yaml.load(open("../settings.yaml"))
+        token = settings.get("bot-token")
 
-client = SlackClient(token)
-
-
-# post a message and return the timestamp of the message
-def post_message(message, channel):
-    res = client.api_call(
-        "chat.postMessage", channel=channel, text=message,
-        username=bot_name, icon_emoji=bot_emoji
-    )
-    return [res.get("ts"), res.get("channel")]
+        self.bot_name = settings.get("bot-name")
+        self.bot_emoji = ":{emoji}:".format(emoji=settings.get("bot-emoji"))  # wrap emoji name in colons
+        self.client = SlackClient(token)
 
 
-def get_reactions(ts, channel):
-    res = client.api_call(
-        "reactions.get", channel=channel, timestamp=ts
-    )
-    return res.get("message").get("reactions")
+    # post a message and return the timestamp of the message
+    def post_message(self, message, channel):
+        res = self.client.api_call(
+            "chat.postMessage", channel=channel, text=message,
+            username=self.bot_name, icon_emoji=self.bot_emoji
+        )
+        return [res.get("ts"), res.get("channel")]
+
+
+    def get_reactions(self, ts, channel):
+        res = self.client.api_call(
+            "reactions.get", channel=channel, timestamp=ts
+        )
+        return res.get("message").get("reactions")
+
+
