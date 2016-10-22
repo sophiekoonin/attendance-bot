@@ -22,7 +22,7 @@ class TestBot(unittest.TestCase):
         expected_value = ['12345', 'abc123']
         mock_api_call.return_value = {"ts": "12345", "channel": "abc123"}
 
-        result = self.bot.post_message("test_message", "test_channel")
+        result = self.bot.post_message("test_message")
         self.assertEqual(result, expected_value)
 
     def test_get_reactions(self, mock_api_call):
