@@ -1,5 +1,5 @@
 from slackclient import SlackClient
-import yaml
+import os
 from apscheduler.schedulers.background import BackgroundScheduler
 
 
@@ -17,7 +17,7 @@ def schedule(day, hour, mins, func, args):
 class AttendanceBot(object):
 
     def __init__(self, settings):
-        token = settings.get("bot-token")
+        token = os.environ["BOT_TOKEN"]
 
         self.bot_name = settings.get("bot-name")
         self.bot_emoji = ":{emoji}:".format(emoji=settings.get("bot-emoji"))  # wrap emoji name in colons
