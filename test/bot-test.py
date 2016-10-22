@@ -3,6 +3,7 @@ import unittest
 from unittest.mock import patch
 from bot import AttendanceBot
 
+
 @patch("bot.SlackClient.api_call")
 class TestBot(unittest.TestCase):
 
@@ -32,3 +33,9 @@ class TestBot(unittest.TestCase):
         result = self.bot.get_reactions("test_timestamp", "test_channel")
         self.assertEqual(result, expected_value)
 
+    def test_get_real_name(self, mock_api_call):
+        expected_value = "Bobby Tables"
+        mock_api_call.return_value = {"ok": "true", "user": { "profile": {"real_name": "Bobby Tables"}}}
+
+        result = self.bot.get_real_name("12345")
+        self.assertEqual(result, expected_value)
