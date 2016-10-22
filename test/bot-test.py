@@ -7,7 +7,7 @@ import yaml
 @patch("bot.SlackClient.api_call")
 class TestBot(unittest.TestCase):
 
-    def mocked_bot_factory(self, mock_yaml_load):
+    def mocked_bot_factory(self):
         settings = yaml.load(open("../settings.yaml"))
         return AttendanceBot(settings)
 
@@ -15,7 +15,7 @@ class TestBot(unittest.TestCase):
         self.bot = self.mocked_bot_factory()
 
     def test_init_func(self, mock_api_call):
-        self.assertEqual(self.bot.bot_name, "attendancebot")
+        self.assertEqual(self.bot.bot_name, "attendance-bot")
         self.assertEqual(self.bot.bot_emoji, ":memo:")
 
     def test_post_message(self, mock_api_call):
