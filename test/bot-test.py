@@ -2,22 +2,21 @@ import json
 import unittest
 from unittest.mock import patch
 from bot import AttendanceBot
-
+import yaml
 
 @patch("bot.SlackClient.api_call")
 class TestBot(unittest.TestCase):
 
-    @patch("bot.yaml.load")
     def mocked_bot_factory(self, mock_yaml_load):
-        mock_yaml_load.return_value = {"bot-token": "abc123", "bot-name": "testbot", "bot-emoji": "test"}
-        return AttendanceBot()
+        settings = yaml.load(open("../settings.yaml"))
+        return AttendanceBot(settings)
 
     def setUp(self):
         self.bot = self.mocked_bot_factory()
 
     def test_init_func(self, mock_api_call):
-        self.assertEqual(self.bot.bot_name, "testbot")
-        self.assertEqual(self.bot.bot_emoji, ":test:")
+        self.assertEqual(self.bot.bot_name, "attendancebot")
+        self.assertEqual(self.bot.bot_emoji, ":memo:")
 
     def test_post_message(self, mock_api_call):
         expected_value = ['12345', 'abc123']

@@ -1,17 +1,25 @@
 from slackclient import SlackClient
 import yaml
-import sqlite3
+from apscheduler.schedulers.background import BackgroundScheduler
 
 
 class AttendanceBot(object):
 
-    def __init__(self):
-        settings = yaml.load(open("../settings.yaml"))
+    def __init__(self, settings):
         token = settings.get("bot-token")
 
         self.bot_name = settings.get("bot-name")
         self.bot_emoji = ":{emoji}:".format(emoji=settings.get("bot-emoji"))  # wrap emoji name in colons
         self.client = SlackClient(token)
+
+        self.schedule(
+            self,
+            settings.get("rehearsal-day"),
+            settings.get("post-time"),
+            self.post_message,
+            [settings.get("rehearsal-message"),
+             settings.get("channel")]
+        )
 
     # post a message and return the timestamp of the message
     def post_message(self, message, channel):
@@ -32,3 +40,13 @@ class AttendanceBot(object):
             "users.info", user=user_id
         )
         return res.get("user").get("profile").get("real_name")
+
+    def schedule(self, day, time, func, *args):
+        sched = BackgroundScheduler()
+
+        @sched.scheduled_job('cron', day_of_week=day, hour=time)
+        def scheduled_job():
+            func(*args)
+
+        sched.start()
+
