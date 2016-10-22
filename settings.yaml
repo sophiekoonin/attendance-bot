@@ -6,3 +6,11 @@ bot-emoji: memo
 google-client-id:
 google-secret:
 spreadsheet-url:
+post-hour: 10
+post-minute: 00
+rehearsal-day: "mon"
+rehearsal-message: "Hello world!"
+channel: "#general"
+check-day: "friday"
+emoji-present: "thumbsup"
+emoji-absent: "thumbsdown"
