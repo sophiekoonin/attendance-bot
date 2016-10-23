@@ -1,7 +1,11 @@
 from slackclient import SlackClient
 import os
 from apscheduler.schedulers.background import BackgroundScheduler
-
+import apiclient
+from oauth2client import service_account
+import httplib2
+import json
+import yaml
 
 def schedule(day, hour, mins, func, args):
     sched = BackgroundScheduler()
@@ -17,7 +21,7 @@ def schedule(day, hour, mins, func, args):
 class AttendanceBot(object):
 
     def __init__(self, settings):
-        token = os.environ["BOT_TOKEN"]
+        token = os.environ.get("BOT_TOKEN")
 
         self.bot_name = settings.get("bot-name")
         self.bot_emoji = ":{emoji}:".format(emoji=settings.get("bot-emoji"))  # wrap emoji name in colons
@@ -25,6 +29,9 @@ class AttendanceBot(object):
         self.channel = settings.get("channel")
         self.emoji_present = settings.get("emoji-present")
         self.emoji_absent = settings.get("emoji-absent")
+
+        self.sheet_id = settings.get("spreadsheet-id")
+
 
         # # schedule the rehearsal message post
         # schedule(
@@ -69,3 +76,8 @@ class AttendanceBot(object):
             "users.info", user=user_id
         )
         return res.get("user").get("profile").get("real_name")
+
+    def get_google_credentials(self):
+        scopes = "https://www.googleapis.com/auth/spreadsheets"
+        config = json.load(os.environ.get('GOOGLE_CONFIG'))
+        return service_account.ServiceAccountCredentials.from_json_keyfile_dict(config)
