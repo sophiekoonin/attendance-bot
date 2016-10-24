@@ -1,11 +1,12 @@
 from slackclient import SlackClient
 import os
 from apscheduler.schedulers.background import BackgroundScheduler
-import apiclient
+from apiclient import discovery
 from oauth2client import service_account
 import httplib2
 import json
-import yaml
+import psycopg2
+from urllib import parse
 
 def schedule(day, hour, mins, func, args):
     sched = BackgroundScheduler()
@@ -31,6 +32,17 @@ class AttendanceBot(object):
         self.emoji_absent = settings.get("emoji-absent")
 
         self.sheet_id = settings.get("spreadsheet-id")
+
+        parse.uses_netloc.append("postgres")
+        url = parse.urlparse(os.environ["DATABASE_URL"])
+
+        self.db = psycopg2.connect(
+            database=url.path[1:],
+            user=url.username,
+            password=url.password,
+            host=url.hostname,
+            port=url.port
+        )
 
 
         # # schedule the rehearsal message post
@@ -81,3 +93,14 @@ class AttendanceBot(object):
         scopes = "https://www.googleapis.com/auth/spreadsheets"
         config = json.load(os.environ.get('GOOGLE_CONFIG'))
         return service_account.ServiceAccountCredentials.from_json_keyfile_dict(config)
+
+#    def get_range_for_name(self, service, name, date):
+
+
+    def update_spreadsheet(self, names, date):
+        http = httplib2.Http()
+        http = self.get_google_credentials().authorize(http)
+        discoveryUrl = ('https://sheets.googleapis.com/$discovery/rest?'
+                        'version=v4')
+        service = discovery.build('sheets', 'v4', http=http,
+                                  discoveryServiceUrl=discoveryUrl)
