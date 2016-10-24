@@ -22,7 +22,7 @@ def schedule(day, hour, mins, func, args):
 class AttendanceBot(object):
 
     def __init__(self, settings):
-        token = os.environ.get("BOT_TOKEN")
+        token = os.environ["BOT_TOKEN"]
 
         self.bot_name = settings.get("bot-name")
         self.bot_emoji = ":{emoji}:".format(emoji=settings.get("bot-emoji"))  # wrap emoji name in colons
@@ -91,7 +91,7 @@ class AttendanceBot(object):
 
     def get_google_credentials(self):
         scopes = "https://www.googleapis.com/auth/spreadsheets"
-        config = json.load(os.environ.get('GOOGLE_CONFIG'))
+        config = json.load(os.environ['GOOGLE_CONFIG'])
         return service_account.ServiceAccountCredentials.from_json_keyfile_dict(config)
 
 #    def get_range_for_name(self, service, name, date):
