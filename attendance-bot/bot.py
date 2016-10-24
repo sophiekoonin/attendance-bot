@@ -33,16 +33,7 @@ class AttendanceBot(object):
 
         self.sheet_id = settings.get("spreadsheet-id")
 
-        parse.uses_netloc.append("postgres")
-        url = parse.urlparse(os.environ["DATABASE_URL"])
-
-        self.db = psycopg2.connect(
-            database=url.path[1:],
-            user=url.username,
-            password=url.password,
-            host=url.hostname,
-            port=url.port
-        )
+        self.db = self.connect_to_db()
 
 
         # # schedule the rehearsal message post
@@ -55,6 +46,18 @@ class AttendanceBot(object):
         # )
 
     # post a message and return the timestamp of the message
+    def connect_to_db(self):
+        parse.uses_netloc.append("postgres")
+        url = parse.urlparse(os.environ["DATABASE_URL"])
+
+        return psycopg2.connect(
+            database=url.path[1:],
+            user=url.username,
+            password=url.password,
+            host=url.hostname,
+            port=url.port
+        )
+
     def post_message(self, message):
         res = self.client.api_call(
             "chat.postMessage", channel=self.channel, text=message,
