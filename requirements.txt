@@ -1,0 +1,5 @@
+slackclient
+google-python-api-client
+apscheduler
+psycopg2
+yaml
