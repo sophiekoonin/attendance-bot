@@ -3,16 +3,19 @@ import unittest
 from unittest.mock import patch
 from bot import AttendanceBot
 import yaml
+import dbutils
 
 @patch("bot.SlackClient.api_call")
 class TestBot(unittest.TestCase):
 
-    def mocked_bot_factory(self):
+    @classmethod
+    def setUpClass(self):
         settings = yaml.load(open("../settings.yaml"))
-        return AttendanceBot(settings)
-
-    def setUp(self):
-        self.bot = self.mocked_bot_factory()
+        self.bot = AttendanceBot(settings)
+        self.test_db = dbutils.connect_to_db()
+        cur = self.test_db.cursor()
+        cur.execute("CREATE TABLE IF NOT EXISTS Members(id varchar(255), name varchar(255))")
+        cur.execute("CREATE TABLE IF NOT EXISTS Posts(ts varchar(255), date varchar(255))")
 
     def test_init_func(self, mock_api_call):
         self.assertEqual(self.bot.bot_name, "attendance-bot")
@@ -28,13 +31,24 @@ class TestBot(unittest.TestCase):
     def test_get_reactions(self, mock_api_call):
         expected_value = [{"name": "foo", "users": ["user1", "user2"]}]
         mock_api_call.return_value = {"message": {"reactions": expected_value}}
-
         result = self.bot.get_reactions("test_timestamp", "test_channel")
         self.assertEqual(result, expected_value)
 
-    def test_get_real_name(self, mock_api_call):
+    def test_get_real_name_not_present(self, mock_api_call):
         expected_value = "Bobby Tables"
         mock_api_call.return_value = {"ok": "true", "user": { "profile": {"real_name": "Bobby Tables"}}}
 
         result = self.bot.get_real_name("12345")
         self.assertEqual(result, expected_value)
+
+    # def test_get_real_name_is_present(self, mock_api_call):
+    #     self.test_db.cursor().execute("INSERT INTO Members VALUES(%s, %s)", ("12345", "Bobby Tables"))
+    #     expected_value = "Bobby Tables"
+    #     result = self.bot.get_real_name("12345")
+    #     self.assertEqual(result, expected_value)
+
+    @classmethod
+    def tearDownClass(self):
+        cur = self.test_db.cursor()
+        cur.execute("DROP TABLE Members, Posts")
+        self.test_db.close()
