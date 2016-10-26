@@ -5,8 +5,7 @@ from apiclient import discovery
 from oauth2client import service_account
 import httplib2
 import json
-import psycopg2
-from urllib import parse
+import dbutils
 
 def schedule(day, hour, mins, func, args):
     sched = BackgroundScheduler()
@@ -33,7 +32,7 @@ class AttendanceBot(object):
 
         self.sheet_id = settings.get("spreadsheet-id")
 
-        self.db = self.connect_to_db()
+        self.db = dbutils.connect_to_db()
 
 
         # # schedule the rehearsal message post
@@ -46,17 +45,7 @@ class AttendanceBot(object):
         # )
 
     # post a message and return the timestamp of the message
-    def connect_to_db(self):
-        parse.uses_netloc.append("postgres")
-        url = parse.urlparse(os.environ["DATABASE_URL"])
 
-        return psycopg2.connect(
-            database=url.path[1:],
-            user=url.username,
-            password=url.password,
-            host=url.hostname,
-            port=url.port
-        )
 
     def post_message(self, message):
         res = self.client.api_call(
@@ -87,17 +76,26 @@ class AttendanceBot(object):
         return res.get("message").get("reactions")
 
     def get_real_name(self, user_id):
-        res = self.client.api_call(
+        cur = self.db.cursor()
+        cur.execute("SELECT Name FROM Members WHERE SlackID=(%s)", (user_id,))
+        result = cur.fetchone()
+        name = ""
+        if (result == None): # if the name isn't in the db, find it through an api call and store it for next time
+             result = self.client.api_call(
             "users.info", user=user_id
-        )
-        return res.get("user").get("profile").get("real_name")
+            )
+             name = result.get("user").get("profile").get("real_name")
+             cur.execute("INSERT INTO Members VALUES (%s, %s)", (user_id, name))
+        else:
+            name = result[0]
+        return name
 
     def get_google_credentials(self):
         scopes = "https://www.googleapis.com/auth/spreadsheets"
         config = json.load(os.environ['GOOGLE_CONFIG'])
         return service_account.ServiceAccountCredentials.from_json_keyfile_dict(config)
 
-#    def get_range_for_name(self, service, name, date):
+#    def get_range_for_name(self, name, date):
 
 
     def update_spreadsheet(self, names, date):
