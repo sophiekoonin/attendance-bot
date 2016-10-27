@@ -18,6 +18,13 @@ class TestBot(unittest.TestCase):
         cur.execute("CREATE TABLE if not exists Attendance(SlackID varchar(255) references Members(SlackId), RehearsalDate varchar(255) references Posts(RehearsalDate), Present boolean)")
         dbutils.commit_or_rollback(self.test_db)
 
+    def setUp(self):
+        cur = self.test_db.cursor()
+        self.test_db.cursor().execute("INSERT INTO Members VALUES(%s, %s)", ("12345", "Bobby Tables"))
+        self.test_db.cursor().execute("INSERT INTO Posts VALUES(%s, %s)", ("1477908000", "31/10/16"))
+        self.test_db.cursor().execute("INSERT INTO Attendance(slackId,rehearsalDate) VALUES(%s, %s)", ("12345", "31/10/16"))
+        dbutils.commit_or_rollback(self.test_db)
+
     def test_init_func(self):
         self.assertEqual(self.bot.bot_name, "attendance-bot")
         self.assertEqual(self.bot.bot_emoji, ":memo:")
@@ -40,18 +47,18 @@ class TestBot(unittest.TestCase):
 
     @patch("bot.SlackClient.api_call")
     def test_post_message_stores_post_date(self, mock_api_call):
-        test_ts = "1477908000"
-        expected_value = "31/10/16"
-        mock_api_call.return_value = {"ts": "1477908000", "channel": "abc123"}
+        test_ts = "1477581478"
+        expected_value = "27/10/16"
+        mock_api_call.return_value = {"ts": "1477581478", "channel": "abc123"}
         self.bot.post_message("test_message")
         cur = self.test_db.cursor()
-        cur.execute("select postdate from posts where posttimestamp=(%s)", (test_ts,))
+        cur.execute("select rehearsaldate from posts where posttimestamp=(%s)", (test_ts,))
         result = cur.fetchone()[0]
         self.assertEqual(result, expected_value)
 
     def test_get_latest_post_timestamp(self):
         cur = self.test_db.cursor()
-        cur.execute("insert into posts values('1477908005', '31/10/16'), ('1477908006', '31/10/16'), ('1477908007', '31/10/16')")
+        cur.execute("insert into posts values('1477908005', '30/10/16'), ('1477908006', '32/10/16'), ('1477908007', '33/10/16')")
         dbutils.commit_or_rollback(self.test_db)
         expected_value = "1477908007"
         result = self.bot.get_latest_post_timestamp()
@@ -66,31 +73,35 @@ class TestBot(unittest.TestCase):
 
     @patch("bot.SlackClient.api_call")
     def test_get_real_name_not_present(self, mock_api_call):
-        expected_value = "Bobby Tables"
-        mock_api_call.return_value = {"ok": "true", "user": { "profile": {"real_name": "Bobby Tables"}}}
+        expected_value = "Michael Bluth"
+        mock_api_call.return_value = {"ok": "true", "user": { "profile": {"real_name": "Michael Bluth"}}}
 
-        result = self.bot.get_real_name("12345")
+        result = self.bot.get_real_name("101010")
         self.assertEqual(result, expected_value)
 
     def test_get_real_name_is_present(self):
-        self.test_db.cursor().execute("INSERT INTO Members VALUES(%s, %s)", ("54321", "Robert Tables"))
-        dbutils.commit_or_rollback(self.test_db)
-        expected_value = "Robert Tables"
-        result = self.bot.get_real_name("54321")
+        expected_value = "Bobby Tables"
+        result = self.bot.get_real_name("12345")
         self.assertEqual(result, expected_value)
 
     def test_record_attendance(self):
         expected_value = True
-        self.bot.record_attendance("12345", "31/10/16")
         cur = self.test_db.cursor()
+        self.bot.record_attendance("12345", "31/10/16")
         cur.execute("select Present from Attendance where SlackID='12345' and RehearsalDate='31/10/16'")
         result = cur.fetchone()
         self.assertEqual(result, expected_value)
+
+    def tearDown(self):
+        cur = self.test_db.cursor()
+        cur.execute("delete from attendance; delete from posts; delete from members")
+        dbutils.commit_or_rollback(self.test_db)
 
     @classmethod
     def tearDownClass(self):
         self.bot.db.close()
         cur = self.test_db.cursor()
-        cur.execute("DROP TABLE Members, Posts")
+        cur.execute("DROP TABLE Members, Posts, Attendance")
         dbutils.commit_or_rollback(self.test_db)
         self.test_db.close()
+
