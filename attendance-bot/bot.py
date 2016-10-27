@@ -77,7 +77,7 @@ class AttendanceBot(object):
 
     def get_real_name(self, user_id):
         cur = self.db.cursor()
-        cur.execute("SELECT Name FROM Members WHERE SlackID=(%s)", (user_id,))
+        cur.execute("SELECT RealName FROM Members WHERE SlackID=(%s)", (user_id,))
         result = cur.fetchone()
         name = ""
         if (result == None): # if the name isn't in the db, find it through an api call and store it for next time
