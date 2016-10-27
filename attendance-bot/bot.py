@@ -85,7 +85,14 @@ class AttendanceBot(object):
             "users.info", user=user_id
             )
              name = result.get("user").get("profile").get("real_name")
-             cur.execute("INSERT INTO Members VALUES (%s, %s)", (user_id, name))
+             cur.execute("INSERT INTO members VALUES (%s, %s)", (user_id, name))
+             try:
+                self.db.commit()
+             except:
+                self.db.rollback()
+             finally:
+                 pass
+
         else:
             name = result[0]
         return name
