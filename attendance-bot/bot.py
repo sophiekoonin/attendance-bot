@@ -1,10 +1,6 @@
 from slackclient import SlackClient
 import os
 from apscheduler.schedulers.background import BackgroundScheduler
-from apiclient import discovery
-from oauth2client import service_account
-import httplib2
-import json
 import dbutils
 from datetime import datetime
 
@@ -105,20 +101,8 @@ class AttendanceBot(object):
             name = result[0]
         return name
 
-    def get_google_credentials(self):
-        scopes = "https://www.googleapis.com/auth/spreadsheets"
-        config = json.load(os.environ['GOOGLE_CONFIG'])
-        return service_account.ServiceAccountCredentials.from_json_keyfile_dict(config)
-
     def record_attendance(self, id, date):
         cur = self.db.cursor()
         cur.execute("UPDATE attendance SET present=TRUE WHERE slackid=(%s) AND rehearsaldate=(%s)",(id, date))
         dbutils.commit_or_rollback(self.db)
 
-    def update_spreadsheet(self, names, date):
-        http = httplib2.Http()
-        http = self.get_google_credentials().authorize(http)
-        discoveryUrl = ('https://sheets.googleapis.com/$discovery/rest?'
-                        'version=v4')
-        service = discovery.build('sheets', 'v4', http=http,
-                                  discoveryServiceUrl=discoveryUrl)
