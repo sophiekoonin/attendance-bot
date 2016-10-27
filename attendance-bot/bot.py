@@ -58,7 +58,7 @@ class AttendanceBot(object):
 
         post_date = datetime.fromtimestamp(float(ts)).strftime("%d/%m/%y")
         self.db.cursor().execute("INSERT INTO posts VALUES(%s, %s)", (ts, post_date))
-        self.db.commit()
+        dbutils.commit_or_rollback(self.db)
         return [ts, channelID]
 
     # post a message, react to it, and return the timestamp of the message
@@ -99,12 +99,7 @@ class AttendanceBot(object):
             )
             name = result.get("user").get("profile").get("real_name")
             cur.execute("INSERT INTO members VALUES (%s, %s)", (user_id, name))
-            try:
-                self.db.commit()
-            except:
-                self.db.rollback()
-            finally:
-                pass
+            dbutils.commit_or_rollback(self.db)
 
         else:
             name = result[0]
@@ -115,8 +110,10 @@ class AttendanceBot(object):
         config = json.load(os.environ['GOOGLE_CONFIG'])
         return service_account.ServiceAccountCredentials.from_json_keyfile_dict(config)
 
-    #    def get_range_for_name(self, name, date):
-
+    def record_attendance(self, id, date):
+        cur = self.db.cursor()
+        cur.execute("UPDATE attendance SET present=TRUE WHERE slackid=(%s) AND rehearsaldate=(%s)",(id, date))
+        dbutils.commit_or_rollback(self.db)
 
     def update_spreadsheet(self, names, date):
         http = httplib2.Http()
