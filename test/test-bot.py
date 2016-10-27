@@ -14,8 +14,9 @@ class TestBot(unittest.TestCase):
         self.bot = AttendanceBot(settings)
         self.test_db = dbutils.connect_to_db()
         cur = self.test_db.cursor()
-        cur.execute("CREATE TABLE IF NOT EXISTS Members(id varchar(255), name varchar(255))")
-        cur.execute("CREATE TABLE IF NOT EXISTS Posts(ts varchar(255), date varchar(255))")
+        cur.execute("CREATE TABLE if not exists Members(SlackID varchar(255), RealName varchar(255))")
+        cur.execute("CREATE TABLE if not exists Posts(PostTimestamp varchar(255), PostDate varchar(255))")
+        self.test_db.commit()
 
     def test_init_func(self, mock_api_call):
         self.assertEqual(self.bot.bot_name, "attendance-bot")
@@ -41,14 +42,17 @@ class TestBot(unittest.TestCase):
         result = self.bot.get_real_name("12345")
         self.assertEqual(result, expected_value)
 
-    # def test_get_real_name_is_present(self, mock_api_call):
-    #     self.test_db.cursor().execute("INSERT INTO Members VALUES(%s, %s)", ("12345", "Bobby Tables"))
-    #     expected_value = "Bobby Tables"
-    #     result = self.bot.get_real_name("12345")
-    #     self.assertEqual(result, expected_value)
+    def test_get_real_name_is_present(self, mock_api_call):
+        self.test_db.cursor().execute("INSERT INTO Members VALUES(%s, %s)", ("54321", "Robert Tables"))
+        self.test_db.commit()
+        expected_value = "Robert Tables"
+        result = self.bot.get_real_name("54321")
+        self.assertEqual(result, expected_value)
 
     @classmethod
     def tearDownClass(self):
+        self.bot.db.close()
         cur = self.test_db.cursor()
         cur.execute("DROP TABLE Members, Posts")
+        self.test_db.commit()
         self.test_db.close()
