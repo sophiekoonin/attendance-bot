@@ -6,6 +6,8 @@ from oauth2client import service_account
 import httplib2
 import json
 import dbutils
+from datetime import datetime
+
 
 def schedule(day, hour, mins, func, args):
     sched = BackgroundScheduler()
@@ -19,7 +21,6 @@ def schedule(day, hour, mins, func, args):
 
 
 class AttendanceBot(object):
-
     def __init__(self, settings):
         token = os.environ["BOT_TOKEN"]
 
@@ -55,7 +56,8 @@ class AttendanceBot(object):
         ts = res.get("ts")
         channelID = res.get("channel")
 
-        self.db.cursor().execute("INSERT INTO posts VALUES(%s, %s)",(ts, "dateplaceholder"))
+        post_date = datetime.fromtimestamp(float(ts)).strftime("%d/%m/%y")
+        self.db.cursor().execute("INSERT INTO posts VALUES(%s, %s)", (ts, post_date))
         self.db.commit()
         return [ts, channelID]
 
@@ -74,6 +76,12 @@ class AttendanceBot(object):
         )
         return ts
 
+    def get_latest_post_timestamp(self):
+        cur = self.db.cursor()
+        cur.execute("select posttimestamp from posts order by posttimestamp desc limit 1")
+        ts = cur.fetchone()[0]
+        return ts
+
     def get_reactions(self, ts, channel):
         res = self.client.api_call(
             "reactions.get", channel=channel, timestamp=ts
@@ -85,18 +93,18 @@ class AttendanceBot(object):
         cur.execute("SELECT RealName FROM Members WHERE SlackID=(%s)", (user_id,))
         result = cur.fetchone()
         name = ""
-        if (result == None): # if the name isn't in the db, find it through an api call and store it for next time
-             result = self.client.api_call(
-            "users.info", user=user_id
+        if (result == None):  # if the name isn't in the db, find it through an api call and store it for next time
+            result = self.client.api_call(
+                "users.info", user=user_id
             )
-             name = result.get("user").get("profile").get("real_name")
-             cur.execute("INSERT INTO members VALUES (%s, %s)", (user_id, name))
-             try:
+            name = result.get("user").get("profile").get("real_name")
+            cur.execute("INSERT INTO members VALUES (%s, %s)", (user_id, name))
+            try:
                 self.db.commit()
-             except:
+            except:
                 self.db.rollback()
-             finally:
-                 pass
+            finally:
+                pass
 
         else:
             name = result[0]
@@ -107,7 +115,7 @@ class AttendanceBot(object):
         config = json.load(os.environ['GOOGLE_CONFIG'])
         return service_account.ServiceAccountCredentials.from_json_keyfile_dict(config)
 
-#    def get_range_for_name(self, name, date):
+    #    def get_range_for_name(self, name, date):
 
 
     def update_spreadsheet(self, names, date):
