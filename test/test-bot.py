@@ -22,12 +22,18 @@ class TestBot(unittest.TestCase):
         self.assertEqual(self.bot.bot_name, "attendance-bot")
         self.assertEqual(self.bot.bot_emoji, ":memo:")
 
-    def test_post_message(self, mock_api_call):
+    def test_post_message_posts_message(self, mock_api_call):
         expected_value = ['12345', 'abc123']
         mock_api_call.return_value = {"ts": "12345", "channel": "abc123"}
 
         result = self.bot.post_message("test_message")
         self.assertEqual(result, expected_value)
+
+    def test_post_message_persists_timestamp(self, mock_api_call):
+        mock_api_call.return_value = {"ts" : "543210", "channel": "abc123"}
+        self.bot.post_message("test_message")
+        result = self.test_db.cursor().execute("SELECT * FROM posts WHERE posttimestamp='543210'")
+        self.assertIsNotNone(result)
 
     def test_get_reactions(self, mock_api_call):
         expected_value = [{"name": "foo", "users": ["user1", "user2"]}]
