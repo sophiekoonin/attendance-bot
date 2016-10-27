@@ -14,8 +14,8 @@ class TestBot(unittest.TestCase):
         self.test_db = dbutils.connect_to_db()
         cur = self.test_db.cursor()
         cur.execute("CREATE TABLE if not exists Members(SlackID varchar(255) not null primary key, RealName varchar(255) not null)")
-        cur.execute("CREATE TABLE if not exists Posts(PostTimestamp varchar(255) not null primary key, PostDate varchar(255)) not null")
-        cur.execute("CREATE TABLE if not exists Attendance(SlackID varchar(255) references Members(SlackId), PostDate varchar(255) references Posts(PostDate), Present boolean")
+        cur.execute("CREATE TABLE if not exists Posts(PostTimestamp varchar(255) not null primary key, RehearsalDate varchar(255)) not null")
+        cur.execute("CREATE TABLE if not exists Attendance(SlackID varchar(255) references Members(SlackId), RehearsalDate varchar(255) references Posts(RehearsalDate), Present boolean")
         self.test_db.commit()
 
     def test_init_func(self):
@@ -83,7 +83,7 @@ class TestBot(unittest.TestCase):
         expected_value = True
         self.bot.record_attendance("Bobby Tables", "31/10/16")
         cur = self.test_db.cursor()
-        cur.execute("select Present from Attendance where SlackID='12345' and PostDate='31/10/16'")
+        cur.execute("select Present from Attendance where SlackID='12345' and RehearsalDate='31/10/16'")
         result = cur.fetchone()
         self.assertEqual(result, expected_value)
 
