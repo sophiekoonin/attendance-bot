@@ -52,7 +52,9 @@ class AttendanceBot(object):
             "chat.postMessage", channel=self.channel, text=message,
             username=self.bot_name, icon_emoji=self.bot_emoji
         )
-        return [res.get("ts"), res.get("channel")]
+        ts = res.get("ts")
+        channelID = res.get("channel")
+        return [ts, channelID]
 
     # post a message, react to it, and return the timestamp of the message
     def post_message_with_reactions(self, message):
