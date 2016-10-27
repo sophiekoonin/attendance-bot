@@ -50,12 +50,12 @@ class AttendanceBot(object):
             username=self.bot_name, icon_emoji=self.bot_emoji
         )
         ts = res.get("ts")
-        channelID = res.get("channel")
+        channel_id = res.get("channel")
 
         post_date = datetime.fromtimestamp(float(ts)).strftime("%d/%m/%y")
         self.db.cursor().execute("INSERT INTO posts VALUES(%s, %s)", (ts, post_date))
         dbutils.commit_or_rollback(self.db)
-        return [ts, channelID]
+        return [ts, channel_id]
 
     # post a message, react to it, and return the timestamp of the message
     def post_message_with_reactions(self, message):
@@ -74,7 +74,7 @@ class AttendanceBot(object):
 
     def get_latest_post_timestamp(self):
         cur = self.db.cursor()
-        cur.execute("select posttimestamp from posts order by posttimestamp desc limit 1")
+        cur.execute("select post_timestamp from posts order by post_timestamp desc limit 1")
         ts = cur.fetchone()[0]
         return ts
 
@@ -86,7 +86,7 @@ class AttendanceBot(object):
 
     def get_real_name(self, user_id):
         cur = self.db.cursor()
-        cur.execute("SELECT RealName FROM Members WHERE SlackID=(%s)", (user_id,))
+        cur.execute("SELECT real_name FROM Members WHERE slack_id=(%s)", (user_id,))
         result = cur.fetchone()
         name = ""
         if (result == None):  # if the name isn't in the db, find it through an api call and store it for next time
@@ -103,6 +103,6 @@ class AttendanceBot(object):
 
     def record_attendance(self, id, date):
         cur = self.db.cursor()
-        cur.execute("UPDATE attendance SET present=TRUE WHERE slackid=(%s) AND rehearsaldate=(%s)",(id, date))
+        cur.execute("UPDATE attendance SET present=TRUE WHERE slack_id=(%s) AND rehearsal_date=(%s)",(id, date))
         dbutils.commit_or_rollback(self.db)
 
