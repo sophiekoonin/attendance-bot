@@ -13,16 +13,16 @@ class TestBot(unittest.TestCase):
         self.bot = AttendanceBot(settings)
         self.test_db = dbutils.connect_to_db()
         cur = self.test_db.cursor()
-        cur.execute("CREATE TABLE if not exists Members(SlackID varchar(255) not null primary key, RealName varchar(255) not null)")
-        cur.execute("CREATE TABLE if not exists Posts(PostTimestamp varchar(255) not null primary key, RehearsalDate varchar(255) unique not null)")
-        cur.execute("CREATE TABLE if not exists Attendance(SlackID varchar(255) references Members(SlackId), RehearsalDate varchar(255) references Posts(RehearsalDate), Present boolean)")
+        cur.execute("CREATE TABLE if not exists Members(slack_id varchar(255) not null primary key, real_name varchar(255) not null)")
+        cur.execute("CREATE TABLE if not exists Posts(post_timestamp varchar(255) not null primary key, rehearsal_date varchar(255) unique not null)")
+        cur.execute("CREATE TABLE if not exists Attendance(slack_id varchar(255) references Members(slack_id), rehearsal_date varchar(255) references Posts(rehearsal_date), Present boolean)")
         dbutils.commit_or_rollback(self.test_db)
 
     def setUp(self):
         cur = self.test_db.cursor()
         self.test_db.cursor().execute("INSERT INTO Members VALUES(%s, %s)", ("12345", "Bobby Tables"))
         self.test_db.cursor().execute("INSERT INTO Posts VALUES(%s, %s)", ("1477908000", "31/10/16"))
-        self.test_db.cursor().execute("INSERT INTO Attendance(slackId,rehearsalDate) VALUES(%s, %s)", ("12345", "31/10/16"))
+        self.test_db.cursor().execute("INSERT INTO Attendance(slack_id,rehearsal_date) VALUES(%s, %s)", ("12345", "31/10/16"))
         dbutils.commit_or_rollback(self.test_db)
 
     def test_init_func(self):
@@ -41,7 +41,7 @@ class TestBot(unittest.TestCase):
         mock_api_call.return_value = {"ts" : "543210", "channel": "abc123"}
         self.bot.post_message("test_message")
         cur = self.test_db.cursor()
-        cur.execute("SELECT * FROM posts WHERE posttimestamp='543210'")
+        cur.execute("SELECT * FROM posts WHERE post_timestamp='543210'")
         result = cur.fetchone()
         self.assertIsNotNone(result)
 
@@ -52,7 +52,7 @@ class TestBot(unittest.TestCase):
         mock_api_call.return_value = {"ts": "1477581478", "channel": "abc123"}
         self.bot.post_message("test_message")
         cur = self.test_db.cursor()
-        cur.execute("select rehearsaldate from posts where posttimestamp=(%s)", (test_ts,))
+        cur.execute("select rehearsal_date from posts where post_timestamp=(%s)", (test_ts,))
         result = cur.fetchone()[0]
         self.assertEqual(result, expected_value)
 
@@ -88,8 +88,8 @@ class TestBot(unittest.TestCase):
         expected_value = True
         cur = self.test_db.cursor()
         self.bot.record_attendance("12345", "31/10/16")
-        cur.execute("select Present from Attendance where SlackID='12345' and RehearsalDate='31/10/16'")
-        result = cur.fetchone()
+        cur.execute("select Present from Attendance where slack_id='12345' and rehearsal_date='31/10/16'")
+        result = cur.fetchone()[0]
         self.assertEqual(result, expected_value)
 
     def tearDown(self):
