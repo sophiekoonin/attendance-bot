@@ -14,9 +14,9 @@ class TestBot(unittest.TestCase):
         self.test_db = dbutils.connect_to_db()
         cur = self.test_db.cursor()
         cur.execute("CREATE TABLE if not exists Members(SlackID varchar(255) not null primary key, RealName varchar(255) not null)")
-        cur.execute("CREATE TABLE if not exists Posts(PostTimestamp varchar(255) not null primary key, RehearsalDate varchar(255)) not null")
-        cur.execute("CREATE TABLE if not exists Attendance(SlackID varchar(255) references Members(SlackId), RehearsalDate varchar(255) references Posts(RehearsalDate), Present boolean")
-        self.test_db.commit()
+        cur.execute("CREATE TABLE if not exists Posts(PostTimestamp varchar(255) not null primary key, RehearsalDate varchar(255) unique not null)")
+        cur.execute("CREATE TABLE if not exists Attendance(SlackID varchar(255) references Members(SlackId), RehearsalDate varchar(255) references Posts(RehearsalDate), Present boolean)")
+        dbutils.commit_or_rollback(self.test_db)
 
     def test_init_func(self):
         self.assertEqual(self.bot.bot_name, "attendance-bot")
@@ -52,7 +52,7 @@ class TestBot(unittest.TestCase):
     def test_get_latest_post_timestamp(self):
         cur = self.test_db.cursor()
         cur.execute("insert into posts values('1477908005', '31/10/16'), ('1477908006', '31/10/16'), ('1477908007', '31/10/16')")
-        self.test_db.commit()
+        dbutils.commit_or_rollback(self.test_db)
         expected_value = "1477908007"
         result = self.bot.get_latest_post_timestamp()
         self.assertEqual(result, expected_value)
@@ -74,14 +74,14 @@ class TestBot(unittest.TestCase):
 
     def test_get_real_name_is_present(self):
         self.test_db.cursor().execute("INSERT INTO Members VALUES(%s, %s)", ("54321", "Robert Tables"))
-        self.test_db.commit()
+        dbutils.commit_or_rollback(self.test_db)
         expected_value = "Robert Tables"
         result = self.bot.get_real_name("54321")
         self.assertEqual(result, expected_value)
 
     def test_record_attendance(self):
         expected_value = True
-        self.bot.record_attendance("Bobby Tables", "31/10/16")
+        self.bot.record_attendance("12345", "31/10/16")
         cur = self.test_db.cursor()
         cur.execute("select Present from Attendance where SlackID='12345' and RehearsalDate='31/10/16'")
         result = cur.fetchone()
@@ -92,5 +92,5 @@ class TestBot(unittest.TestCase):
         self.bot.db.close()
         cur = self.test_db.cursor()
         cur.execute("DROP TABLE Members, Posts")
-        self.test_db.commit()
+        dbutils.commit_or_rollback(self.test_db)
         self.test_db.close()

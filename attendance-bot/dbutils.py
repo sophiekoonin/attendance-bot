@@ -13,3 +13,11 @@ def connect_to_db():
         host=url.hostname,
         port=url.port
     )
+
+def commit_or_rollback(db):
+    try:
+        db.commit()
+    except Exception as e:
+        db.rollback()
+    finally:
+        pass
