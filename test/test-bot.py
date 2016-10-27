@@ -36,6 +36,16 @@ class TestBot(unittest.TestCase):
         result = cur.fetchone()
         self.assertIsNotNone(result)
 
+    def test_post_message_stores_rehearsal_date(self, mock_api_call):
+        test_ts = "1477908000"
+        expected_value = "31/10/16"
+        mock_api_call.return_value = {"ts": "1477908000", "channel": "abc123"}
+        self.bot.post_message("test_message")
+        cur = self.test_db.cursor()
+        cur.execute("select postdate from posts where posttimestamp=(%s)", (test_ts,))
+        result = cur.fetchone()[0]
+        self.assertEqual(result, expected_value)
+
     def test_get_reactions(self, mock_api_call):
         expected_value = [{"name": "foo", "users": ["user1", "user2"]}]
         mock_api_call.return_value = {"message": {"reactions": expected_value}}
