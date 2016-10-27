@@ -54,6 +54,9 @@ class AttendanceBot(object):
         )
         ts = res.get("ts")
         channelID = res.get("channel")
+
+        self.db.cursor().execute("INSERT INTO posts VALUES(%s, %s)",(ts, "dateplaceholder"))
+        self.db.commit()
         return [ts, channelID]
 
     # post a message, react to it, and return the timestamp of the message
