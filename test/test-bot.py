@@ -5,21 +5,22 @@ from bot import AttendanceBot
 import yaml
 import dbutils
 
+
 class TestBot(unittest.TestCase):
+    bot = None
+    test_db = dbutils.connect_to_db()
 
     @classmethod
-    def setUpClass(self):
+    def setUpClass(cls):
         settings = yaml.load(open("../settings.yaml"))
-        self.bot = AttendanceBot(settings)
-        self.test_db = dbutils.connect_to_db()
-        cur = self.test_db.cursor()
+        cls.bot = AttendanceBot(settings)
+        cur = cls.test_db.cursor()
         cur.execute("CREATE TABLE if not exists Members(slack_id varchar(255) not null primary key, real_name varchar(255) not null)")
         cur.execute("CREATE TABLE if not exists Posts(post_timestamp varchar(255) not null primary key, rehearsal_date varchar(255) unique not null)")
         cur.execute("CREATE TABLE if not exists Attendance(slack_id varchar(255) references Members(slack_id), rehearsal_date varchar(255) references Posts(rehearsal_date), Present boolean)")
-        dbutils.commit_or_rollback(self.test_db)
+        dbutils.commit_or_rollback(cls.test_db)
 
     def setUp(self):
-        cur = self.test_db.cursor()
         self.test_db.cursor().execute("INSERT INTO Members VALUES(%s, %s)", ("12345", "Bobby Tables"))
         self.test_db.cursor().execute("INSERT INTO Posts VALUES(%s, %s)", ("1477908000", "31/10/16"))
         self.test_db.cursor().execute("INSERT INTO Attendance(slack_id,rehearsal_date) VALUES(%s, %s)", ("12345", "31/10/16"))
@@ -38,7 +39,7 @@ class TestBot(unittest.TestCase):
 
     @patch("bot.SlackClient.api_call")
     def test_post_message_persists_timestamp(self, mock_api_call):
-        mock_api_call.return_value = {"ts" : "543210", "channel": "abc123"}
+        mock_api_call.return_value = {"ts": "543210", "channel": "abc123"}
         self.bot.post_message("test_message")
         cur = self.test_db.cursor()
         cur.execute("SELECT * FROM posts WHERE post_timestamp='543210'")
@@ -74,7 +75,7 @@ class TestBot(unittest.TestCase):
     @patch("bot.SlackClient.api_call")
     def test_get_real_name_not_present(self, mock_api_call):
         expected_value = "Michael Bluth"
-        mock_api_call.return_value = {"ok": "true", "user": { "profile": {"real_name": "Michael Bluth"}}}
+        mock_api_call.return_value = {"ok": "true", "user": {"profile": {"real_name": "Michael Bluth"}}}
 
         result = self.bot.get_real_name("101010")
         self.assertEqual(result, expected_value)
@@ -84,8 +85,16 @@ class TestBot(unittest.TestCase):
         result = self.bot.get_real_name("12345")
         self.assertEqual(result, expected_value)
 
-    def test_record_attendance(self):
+    def test_record_attendance_present(self):
         expected_value = True
+        cur = self.test_db.cursor()
+        self.bot.record_attendance("12345", "31/10/16", )
+        cur.execute("select Present from Attendance where slack_id='12345' and rehearsal_date='31/10/16'")
+        result = cur.fetchone()[0]
+        self.assertEqual(result, expected_value)
+
+    def test_record_attendance_absent(self):
+        expected_value = False
         cur = self.test_db.cursor()
         self.bot.record_attendance("12345", "31/10/16")
         cur.execute("select Present from Attendance where slack_id='12345' and rehearsal_date='31/10/16'")
@@ -98,10 +107,10 @@ class TestBot(unittest.TestCase):
         dbutils.commit_or_rollback(self.test_db)
 
     @classmethod
-    def tearDownClass(self):
-        self.bot.db.close()
-        cur = self.test_db.cursor()
+    def tearDownClass(cls):
+        cls.bot.db.close()
+        cur = cls.test_db.cursor()
         cur.execute("DROP TABLE Members, Posts, Attendance")
-        dbutils.commit_or_rollback(self.test_db)
-        self.test_db.close()
+        dbutils.commit_or_rollback(cls.test_db)
+        cls.test_db.close()
 
