@@ -96,10 +96,10 @@ class TestBot(unittest.TestCase):
         self.assertEqual(result, expected_value)
 
     @patch("bot.SlackClient.api_call")
-    def test_populate_attendance_data(self, mock_api_call):
+    def test_process_attendance(self, mock_api_call):
         expected_value = [("12345",), ("234567",), ("345678",)]
         mock_api_call.return_value =   {"members": [{"id": "234567", "real_name": "Bob Loblaw", "deleted": False}, {"id": "345678", "real_name": "Michael Bluth", "deleted": False}]}
-        self.bot.populate_attendance_data()
+        self.bot.process_attendance()
         cur = self.test_db.cursor()
         cur.execute("select slack_id from attendance where date = '31/10/16'")
         result = cur.fetchall()
