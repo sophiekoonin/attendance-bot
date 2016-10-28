@@ -5,6 +5,7 @@ import dbutils
 from datetime import datetime
 import yaml
 
+
 def schedule(day, hour, mins, func, args):
     sched = BackgroundScheduler()
 
@@ -61,23 +62,27 @@ class AttendanceBot(object):
         current_member_data = []
         ids_for_deletion = []
         for member in members:
-            if member["deleted"] == False:
+            if not member["deleted"]:
                 slack_id = member["id"]
                 real_name = member["real_name"]
-                current_member_data.append({"id":slack_id, "realname":real_name})
-
+                current_member_data.append({"id": slack_id, "realname": real_name})
             else:
-               ids_for_deletion.append((member["id"],))
-        cur.executemany("INSERT INTO members VALUES(%(id)s, %(realname)s) ON CONFLICT (slack_id) DO UPDATE SET real_name = %(realname)s WHERE members.slack_id = %(id)s", current_member_data)
+                ids_for_deletion.append((member["id"],))
+
+        query = ("INSERT INTO members VALUES(%(id)s, %(realname)s) ",
+                 "ON CONFLICT (slack_id) DO UPDATE ",
+                 "SET real_name = %(realname)s ",
+                 "WHERE members.slack_id = %(id)s")
+        cur.executemany(query, current_member_data)
         cur.executemany("DELETE FROM members WHERE slack_id = %s", ids_for_deletion)
         dbutils.commit_or_rollback(self.db)
 
     def update_attendance_table(self, date):
-        query = "INSERT INTO attendance(slack_id, rehearsal_date) SELECT slack_id, %s FROM Members ON CONFLICT DO NOTHING"
+        query = ("INSERT INTO attendance(slack_id, rehearsal_date)"
+                 "SELECT slack_id, %s FROM Members ON CONFLICT DO NOTHING")
         cur = self.db.cursor()
         cur.execute(query, (date,))
         dbutils.commit_or_rollback(self.db)
-
 
     # post a message and return the timestamp of the message
     def post_message(self, message):
@@ -115,7 +120,7 @@ class AttendanceBot(object):
         ts = result[0]
         date = result[1]
         channel_id = result[2]
-        return {"ts": ts, "date": date, "channel_id": channel_id,}
+        return {"ts": ts, "date": date, "channel_id": channel_id, }
 
     def get_reactions(self, ts, channel):
         res = self.client.api_call(
@@ -123,15 +128,16 @@ class AttendanceBot(object):
         )
         return res.get("message").get("reactions")
 
-    def record_presence(self, id, date):
-        self.record_attendance(id, date, True)
+    def record_presence(self, slack_id, date):
+        self.record_attendance(slack_id, date, True)
 
-    def record_absence(self, id, date):
-        self.record_attendance(id, date, False)
+    def record_absence(self, slack_id, date):
+        self.record_attendance(slack_id, date, False)
 
-    def record_attendance(self, id, date, present):
+    def record_attendance(self, slack_id, date, present):
         cur = self.db.cursor()
-        cur.execute("UPDATE attendance SET present=(%s) WHERE slack_id=(%s) AND rehearsal_date=(%s)", (present, id, date))
+        cur.execute("UPDATE attendance SET present=(%s) WHERE slack_id=(%s) AND rehearsal_date=(%s)",
+                    (present, slack_id, date))
         dbutils.commit_or_rollback(self.db)
 
     def process_attendance(self):
@@ -151,6 +157,7 @@ class AttendanceBot(object):
                     self.record_absence(user, date)
             else:
                 pass
+
 
 if __name__ == "__main__":
     # schedule the rehearsal message post
