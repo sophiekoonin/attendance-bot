@@ -95,16 +95,6 @@ class TestBot(unittest.TestCase):
         result = cur.fetchall()
         self.assertEqual(result, expected_value)
 
-    @patch("bot.SlackClient.api_call")
-    def test_process_attendance(self, mock_api_call):
-        expected_value = [("12345",), ("234567",), ("345678",)]
-        mock_api_call.return_value =   {"members": [{"id": "234567", "real_name": "Bob Loblaw", "deleted": False}, {"id": "345678", "real_name": "Michael Bluth", "deleted": False}]}
-        self.bot.process_attendance()
-        cur = self.test_db.cursor()
-        cur.execute("select slack_id from attendance where date = '31/10/16'")
-        result = cur.fetchall()
-        self.assertEqual(result, expected_value)
-
     def test_record_presence(self):
         expected_value = True
         cur = self.test_db.cursor()
@@ -121,17 +111,19 @@ class TestBot(unittest.TestCase):
         result = cur.fetchone()[0]
         self.assertEqual(result, expected_value)
 
-    # @patch("bot.SlackClient.api_call")
-    # def test_process_attendance(self, mock_api_call):
-    #     expected_value = (True, True, False, True, None,)
-    #     mock_api_call.return_value = {"message":{"reactions":[{"name":"thumbsup", "users":["12345", "23456", "45678"]},{"name":"thumbsdown", "users":["34567"]}]}}
-    #     cur = self.test_db.cursor()
-    #     cur.execute("insert into members values ('23456', 'Tobias Funke'),('34567', 'GOB Bluth'),('45678', 'Buster Bluth'), ('56789', 'George Michael Bluth')")
-    #     dbutils.commit_or_rollback(self.test_db)
-    #     self.bot.process_attendance()
-    #     cur.execute("select present from attendance where rehearsal_date='31/10/16'")
-    #     result = cur.fetchall()
-    #     self.assertEqual(result, expected_value)
+    @patch("bot.SlackClient.api_call")
+    @patch("bot.AttendanceBot.get_reactions")
+    def test_process_attendance(self, mock_get_reactions, mock_api_call,):
+        expected_value = (True, True, False, True, None,)
+        mock_api_call.return_value = {"members": [{"id": "234567", "real_name": "Bob Loblaw", "deleted": False}, {"id": "345678", "real_name": "Michael Bluth", "deleted": False}, {"id": "101011", "real_name": "GOB Bluth", "deleted": True}]}
+        mock_get_reactions.return_value = [{"name":"thumbsup", "users":["12345", "23456", "45678"]},{"name":"thumbsdown", "users":["34567"]}]
+        cur = self.test_db.cursor()
+        cur.execute("insert into members values ('23456', 'Tobias Funke'),('34567', 'GOB Bluth'),('45678', 'Buster Bluth'), ('56789', 'George Michael Bluth')")
+        dbutils.commit_or_rollback(self.test_db)
+        self.bot.process_attendance()
+        cur.execute("select present from attendance where rehearsal_date='31/10/16'")
+        result = cur.fetchall()
+        self.assertEqual(result, expected_value)
 
     def tearDown(self):
         cur = self.test_db.cursor()
