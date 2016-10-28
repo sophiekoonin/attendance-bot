@@ -45,13 +45,11 @@ class AttendanceBot(object):
                 current_member_data.append({"id":slack_id, "realname":real_name})
 
             else:
-               ids_for_deletion.append(member["id"])
-
-
+               ids_for_deletion.append((member["id"],))
         cur.executemany("INSERT INTO members VALUES(%(id)s, %(realname)s) ON CONFLICT (slack_id) DO UPDATE SET real_name = %(realname)s WHERE members.slack_id = %(id)s", current_member_data)
-        cur.executemany("DELETE FROM members WHERE slack_id = %s", *ids_for_deletion)
-
+        cur.executemany("DELETE FROM members WHERE slack_id = %s", ids_for_deletion)
         dbutils.commit_or_rollback(self.db)
+
     # post a message and return the timestamp of the message
     def post_message(self, message):
         res = self.client.api_call(
@@ -125,6 +123,7 @@ class AttendanceBot(object):
         dbutils.commit_or_rollback(self.db)
 
     def process_attendance(self):
+        self.update_members()
         post_data = self.get_latest_post_data()
         ts = post_data["ts"]
         channel_id = post_data["channel_id"]
