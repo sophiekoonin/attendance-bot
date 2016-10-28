@@ -6,7 +6,7 @@ from datetime import datetime
 import yaml
 
 
-def schedule(day, hour, mins, func, args):
+def schedule(day, hour, mins, func, *args):
     sched = BackgroundScheduler()
 
     @sched.scheduled_job('cron', day_of_week=day, hour=hour, minute=mins)
@@ -162,10 +162,18 @@ class AttendanceBot(object):
 if __name__ == "__main__":
     # schedule the rehearsal message post
     bot = AttendanceBot(yaml.load(open('../settings.yaml')))
+
     schedule(
         bot.settings.get("rehearsal-day"),
         bot.settings.get("post-hour"),
         bot.settings.get("post-minute"),
         bot.post_message_with_reactions,
         [bot.settings.get("rehearsal-message")]
+    )
+
+    schedule(
+        bot.settings.get("update-day"),
+        bot.settings.get("post-hour"),
+        bot.settings.get("post-minute"),
+        bot.process_attendance(),
     )
