@@ -61,7 +61,7 @@ class TestBot(unittest.TestCase):
         cur = self.test_db.cursor()
         cur.execute("insert into posts values('1477908005', '30/10/16', 'abc123'), ('1477908006', '32/10/16', 'abc123'), ('1477908007', '33/10/16', 'abc123')")
         dbutils.commit_or_rollback(self.test_db)
-        expected_value = {"ts": "1477908007", "channel_id": "abc123"}
+        expected_value = {"ts": "1477908007", "date":"33/10/16", "channel_id": "abc123"}
         result = self.bot.get_latest_post_data()
         self.assertEqual(result, expected_value)
 
