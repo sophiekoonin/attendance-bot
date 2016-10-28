@@ -3,7 +3,7 @@ import os
 from apscheduler.schedulers.background import BackgroundScheduler
 import dbutils
 from datetime import datetime
-
+import yaml
 
 def schedule(day, hour, mins, func, args):
     sched = BackgroundScheduler()
@@ -18,6 +18,7 @@ def schedule(day, hour, mins, func, args):
 
 class AttendanceBot(object):
     def __init__(self, settings):
+        self.settings = settings
         token = os.environ["BOT_TOKEN"]
 
         self.bot_name = settings.get("bot-name")
@@ -31,19 +32,7 @@ class AttendanceBot(object):
 
         self.db = dbutils.connect_to_db()
 
-
-        # # schedule the rehearsal message post
-        # schedule(
-        #     settings.get("rehearsal-day"),
-        #     settings.get("post-hour"),
-        #     settings.get("post-minute"),
-        #     self.post_message_with_reactions,
-        #     [settings.get("rehearsal-message")]
-        # )
-
     # post a message and return the timestamp of the message
-
-
     def post_message(self, message):
         res = self.client.api_call(
             "chat.postMessage", channel=self.channel, text=message,
@@ -111,3 +100,14 @@ class AttendanceBot(object):
         cur = self.db.cursor()
         cur.execute("UPDATE attendance SET present=(%s) WHERE slack_id=(%s) AND rehearsal_date=(%s)", (present, id, date))
         dbutils.commit_or_rollback(self.db)
+
+if __name__ == "__main__":
+    # schedule the rehearsal message post
+    bot = AttendanceBot(yaml.parse(open('../settings.yaml')))
+    schedule(
+        bot.settings.get("rehearsal-day"),
+        bot.settings.get("post-hour"),
+        bot.settings.get("post-minute"),
+        bot.post_message_with_reactions,
+        [bot.settings.get("rehearsal-message")]
+    )
