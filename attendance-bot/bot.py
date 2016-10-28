@@ -42,7 +42,7 @@ class AttendanceBot(object):
         channel_id = res.get("channel")
 
         post_date = datetime.fromtimestamp(float(ts)).strftime("%d/%m/%y")
-        self.db.cursor().execute("INSERT INTO posts VALUES(%s, %s)", (ts, post_date))
+        self.db.cursor().execute("INSERT INTO posts VALUES(%s, %s, %s)", (ts, post_date, channel_id))
         dbutils.commit_or_rollback(self.db)
         return [ts, channel_id]
 
@@ -61,11 +61,13 @@ class AttendanceBot(object):
         )
         return ts
 
-    def get_latest_post_timestamp(self):
+    def get_latest_post_data(self):
         cur = self.db.cursor()
-        cur.execute("select post_timestamp from posts order by post_timestamp desc limit 1")
-        ts = cur.fetchone()[0]
-        return ts
+        cur.execute("select post_timestamp, channel_id from posts order by post_timestamp desc limit 1")
+        result = cur.fetchone()
+        ts = result[0]
+        channel_id = result[1]
+        return {"ts": ts, "channel_id": channel_id}
 
     def get_reactions(self, ts, channel):
         res = self.client.api_call(
@@ -100,6 +102,10 @@ class AttendanceBot(object):
         cur = self.db.cursor()
         cur.execute("UPDATE attendance SET present=(%s) WHERE slack_id=(%s) AND rehearsal_date=(%s)", (present, id, date))
         dbutils.commit_or_rollback(self.db)
+
+    def process_attendance(self):
+        pass
+
 
 if __name__ == "__main__":
     # schedule the rehearsal message post

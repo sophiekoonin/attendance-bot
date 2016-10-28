@@ -57,12 +57,12 @@ class TestBot(unittest.TestCase):
         result = cur.fetchone()[0]
         self.assertEqual(result, expected_value)
 
-    def test_get_latest_post_timestamp(self):
+    def test_get_latest_post_data(self):
         cur = self.test_db.cursor()
         cur.execute("insert into posts values('1477908005', '30/10/16', 'abc123'), ('1477908006', '32/10/16', 'abc123'), ('1477908007', '33/10/16', 'abc123')")
         dbutils.commit_or_rollback(self.test_db)
-        expected_value = "1477908007"
-        result = self.bot.get_latest_post_timestamp()
+        expected_value = {"ts": "1477908007", "channel_id": "abc123"}
+        result = self.bot.get_latest_post_data()
         self.assertEqual(result, expected_value)
 
     @patch("bot.SlackClient.api_call")
