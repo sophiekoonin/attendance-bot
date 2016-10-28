@@ -16,13 +16,13 @@ class TestBot(unittest.TestCase):
         cls.bot = AttendanceBot(settings)
         cur = cls.test_db.cursor()
         cur.execute("CREATE TABLE if not exists Members(slack_id varchar(255) not null primary key, real_name varchar(255) not null)")
-        cur.execute("CREATE TABLE if not exists Posts(post_timestamp varchar(255) not null primary key, rehearsal_date varchar(255) unique not null)")
+        cur.execute("CREATE TABLE if not exists Posts(post_timestamp varchar(255) not null primary key, rehearsal_date varchar(255) unique not null, channel_id varchar(255) not null)")
         cur.execute("CREATE TABLE if not exists Attendance(slack_id varchar(255) references Members(slack_id), rehearsal_date varchar(255) references Posts(rehearsal_date), Present boolean)")
         dbutils.commit_or_rollback(cls.test_db)
 
     def setUp(self):
         self.test_db.cursor().execute("INSERT INTO Members VALUES(%s, %s)", ("12345", "Bobby Tables"))
-        self.test_db.cursor().execute("INSERT INTO Posts VALUES(%s, %s)", ("1477908000", "31/10/16"))
+        self.test_db.cursor().execute("INSERT INTO Posts VALUES(%s, %s, %s)", ("1477908000", "31/10/16", "abc123"))
         self.test_db.cursor().execute("INSERT INTO Attendance(slack_id,rehearsal_date) VALUES(%s, %s)", ("12345", "31/10/16"))
         dbutils.commit_or_rollback(self.test_db)
 
@@ -59,7 +59,7 @@ class TestBot(unittest.TestCase):
 
     def test_get_latest_post_timestamp(self):
         cur = self.test_db.cursor()
-        cur.execute("insert into posts values('1477908005', '30/10/16'), ('1477908006', '32/10/16'), ('1477908007', '33/10/16')")
+        cur.execute("insert into posts values('1477908005', '30/10/16', 'abc123'), ('1477908006', '32/10/16', 'abc123'), ('1477908007', '33/10/16', 'abc123')")
         dbutils.commit_or_rollback(self.test_db)
         expected_value = "1477908007"
         result = self.bot.get_latest_post_timestamp()
