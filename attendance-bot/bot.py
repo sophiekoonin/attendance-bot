@@ -31,6 +31,28 @@ class AttendanceBot(object):
         self.sheet_id = settings.get("spreadsheet-id")
 
         self.db = dbutils.connect_to_db()
+        self.create_tables()
+
+    def create_tables(self):
+        cur = self.db.cursor()
+
+        members_query = ("CREATE TABLE IF NOT EXISTS members"
+                         "(slack_id varchar(255) PRIMARY KEY, "
+                         "real_name varchar(255) NOT NULL)")
+        posts_query = ("CREATE TABLE IF NOT EXISTS posts"
+                       "(post_timestamp varchar(255) PRIMARY KEY, "
+                       "rehearsal_date varchar(255) UNIQUE NOT NULL, "
+                       "channel_id varchar(255) NOT NULL)")
+        attendance_query = ("CREATE TABLE IF NOT EXISTS attendance"
+                            "(slack_id varchar(255) REFERENCES members(slack_id), "
+                            "rehearsal_date varchar(255) REFERENCES posts(rehearsal_date), "
+                            "present boolean, "
+                            "PRIMARY KEY (slack_id, rehearsal_date))")
+
+        cur.execute(members_query)
+        cur.execute(posts_query)
+        cur.execute(attendance_query)
+        dbutils.commit_or_rollback(self.db)
 
     def update_members(self):
         res = self.client.api_call("users.list")
@@ -132,7 +154,7 @@ class AttendanceBot(object):
 
 if __name__ == "__main__":
     # schedule the rehearsal message post
-    bot = AttendanceBot(yaml.parse(open('../settings.yaml')))
+    bot = AttendanceBot(yaml.load(open('../settings.yaml')))
     schedule(
         bot.settings.get("rehearsal-day"),
         bot.settings.get("post-hour"),
