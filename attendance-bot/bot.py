@@ -149,10 +149,10 @@ class AttendanceBot(object):
         self.update_attendance_table(date)
         reactions = self.get_reactions(ts, channel_id)
         for reaction in reactions:
-            if reaction["name"] == "thumbsup":
+            if reaction["name"] == self.emoji_present:
                 for user in reaction["users"]:
                     self.record_presence(user, date)
-            elif reaction["name"] == "thumbsdown":
+            elif reaction["name"] == self.emoji_absent:
                 for user in reaction["users"]:
                     self.record_absence(user, date)
             else:
