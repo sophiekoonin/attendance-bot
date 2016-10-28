@@ -73,19 +73,6 @@ class TestBot(unittest.TestCase):
         self.assertEqual(result, expected_value)
 
     @patch("bot.SlackClient.api_call")
-    def test_get_real_name_not_present(self, mock_api_call):
-        expected_value = "Michael Bluth"
-        mock_api_call.return_value = {"ok": "true", "user": {"profile": {"real_name": "Michael Bluth"}}}
-
-        result = self.bot.get_real_name("101010")
-        self.assertEqual(result, expected_value)
-
-    def test_get_real_name_is_present(self):
-        expected_value = "Bobby Tables"
-        result = self.bot.get_real_name("12345")
-        self.assertEqual(result, expected_value)
-
-    @patch("bot.SlackClient.api_call")
     def test_update_users(self, mock_api_call):
         expected_value = [("12345",), ("234567",), ("345678",)]
         mock_api_call.return_value =   {"members": [{"id": "234567", "real_name": "Bob Loblaw", "deleted": False}, {"id": "345678", "real_name": "Michael Bluth", "deleted": False}, {"id": "101011", "real_name": "GOB Bluth", "deleted": True}]}

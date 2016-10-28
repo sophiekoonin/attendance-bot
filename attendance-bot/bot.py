@@ -101,23 +101,6 @@ class AttendanceBot(object):
         )
         return res.get("message").get("reactions")
 
-    def get_real_name(self, user_id):
-        cur = self.db.cursor()
-        cur.execute("SELECT real_name FROM Members WHERE slack_id=(%s)", (user_id,))
-        result = cur.fetchone()
-        name = ""
-        if (result == None):  # if the name isn't in the db, find it through an api call and store it for next time
-            result = self.client.api_call(
-                "users.info", user=user_id
-            )
-            name = result.get("user").get("profile").get("real_name")
-            cur.execute("INSERT INTO members VALUES (%s, %s)", (user_id, name))
-            dbutils.commit_or_rollback(self.db)
-
-        else:
-            name = result[0]
-        return name
-
     def record_presence(self, id, date):
         self.record_attendance(id, date, True)
 
