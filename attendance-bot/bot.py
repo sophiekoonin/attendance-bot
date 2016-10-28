@@ -50,6 +50,13 @@ class AttendanceBot(object):
         cur.executemany("DELETE FROM members WHERE slack_id = %s", ids_for_deletion)
         dbutils.commit_or_rollback(self.db)
 
+    def update_attendance_table(self, date):
+        query = "INSERT INTO attendance(slack_id, rehearsal_date) SELECT slack_id, %s FROM Members ON CONFLICT DO NOTHING"
+        cur = self.db.cursor()
+        cur.execute(query, (date,))
+        dbutils.commit_or_rollback(self.db)
+
+
     # post a message and return the timestamp of the message
     def post_message(self, message):
         res = self.client.api_call(
@@ -128,6 +135,7 @@ class AttendanceBot(object):
         ts = post_data["ts"]
         channel_id = post_data["channel_id"]
         date = post_data["date"]
+        self.update_attendance_table(date)
         reactions = self.get_reactions(ts, channel_id)
         for reaction in reactions:
             if reaction["name"] == "thumbsup":
