@@ -17,7 +17,7 @@ class TestBot(unittest.TestCase):
         cur = cls.test_db.cursor()
         cur.execute("CREATE TABLE if not exists Members(slack_id varchar(255) not null primary key, real_name varchar(255) not null)")
         cur.execute("CREATE TABLE if not exists Posts(post_timestamp varchar(255) not null primary key, rehearsal_date varchar(255) unique not null, channel_id varchar(255) not null)")
-        cur.execute("CREATE TABLE if not exists Attendance(slack_id varchar(255) references Members(slack_id), rehearsal_date varchar(255) references Posts(rehearsal_date), Present boolean)")
+        cur.execute("CREATE TABLE if not exists Attendance(slack_id varchar(255) references Members(slack_id), rehearsal_date varchar(255) references Posts(rehearsal_date), Present boolean, primary key (slack_id, rehearsal_date))")
         dbutils.commit_or_rollback(cls.test_db)
 
     def setUp(self):
@@ -109,6 +109,16 @@ class TestBot(unittest.TestCase):
         self.bot.record_absence("12345", "31/10/16")
         cur.execute("select Present from Attendance where slack_id='12345' and rehearsal_date='31/10/16'")
         result = cur.fetchone()[0]
+        self.assertEqual(result, expected_value)
+
+    def test_update_attendance_table(self):
+        expected_value = [("12345",), ("23456",), ("34567",)]
+        cur = self.test_db.cursor()
+        cur.execute("insert into members values ('23456', 'Tobias Funke'),('34567', 'GOB Bluth')")
+        dbutils.commit_or_rollback(self.test_db)
+        self.bot.update_attendance_table("31/10/16")
+        cur.execute("select slack_id from attendance where rehearsal_date = '31/10/16'")
+        result = cur.fetchall()
         self.assertEqual(result, expected_value)
 
     @patch("bot.SlackClient.api_call")
