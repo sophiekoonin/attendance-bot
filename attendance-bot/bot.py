@@ -69,9 +69,9 @@ class AttendanceBot(object):
             else:
                 ids_for_deletion.append((member["id"],))
 
-        query = ("INSERT INTO members VALUES(%(id)s, %(realname)s) ",
-                 "ON CONFLICT (slack_id) DO UPDATE ",
-                 "SET real_name = %(realname)s ",
+        query = ("INSERT INTO members VALUES(%(id)s, %(realname)s) "
+                 "ON CONFLICT (slack_id) DO UPDATE "
+                 "SET real_name = %(realname)s "
                  "WHERE members.slack_id = %(id)s")
         cur.executemany(query, current_member_data)
         cur.executemany("DELETE FROM members WHERE slack_id = %s", ids_for_deletion)
