@@ -101,8 +101,13 @@ class AttendanceBot(object):
             name = result[0]
         return name
 
-    def record_attendance(self, id, date):
-        cur = self.db.cursor()
-        cur.execute("UPDATE attendance SET present=TRUE WHERE slack_id=(%s) AND rehearsal_date=(%s)",(id, date))
-        dbutils.commit_or_rollback(self.db)
+    def record_presence(self, id, date):
+        self.record_attendance(id, date, True)
 
+    def record_absence(self, id, date):
+        self.record_attendance(id, date, False)
+
+    def record_attendance(self, id, date, present):
+        cur = self.db.cursor()
+        cur.execute("UPDATE attendance SET present=(%s) WHERE slack_id=(%s) AND rehearsal_date=(%s)", (present, id, date))
+        dbutils.commit_or_rollback(self.db)
