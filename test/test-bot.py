@@ -101,6 +101,18 @@ class TestBot(unittest.TestCase):
         result = cur.fetchone()[0]
         self.assertEqual(result, expected_value)
 
+    @patch("bot.SlackClient.api_call")
+    def test_process_attendance(self, mock_api_call):
+        expected_value = (True, True, False, True, None,)
+        mock_api_call.return_value = {"message":{"reactions":[{"name":"thumbsup", "users":["12345", "23456", "45678"]},{"name":"thumbsdown", "users":["34567"]}]}}
+        cur = self.test_db.cursor()
+        cur.execute("insert into members values ('23456', 'Tobias Funke'),('34567', 'GOB Bluth'),('45678', 'Buster Bluth'), ('56789', 'George Michael Bluth')")
+        dbutils.commit_or_rollback(self.test_db)
+        self.bot.process_attendance()
+        cur.execute("select present from attendance where rehearsal_date='31/10/16'")
+        result = cur.fetchall()
+        self.assertEqual(result, expected_value)
+
     def tearDown(self):
         cur = self.test_db.cursor()
         cur.execute("delete from attendance; delete from posts; delete from members")
