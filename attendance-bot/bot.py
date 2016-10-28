@@ -32,6 +32,26 @@ class AttendanceBot(object):
 
         self.db = dbutils.connect_to_db()
 
+    def update_members(self):
+        res = self.client.api_call("users.list")
+        members = res["members"]
+        cur = self.db.cursor()
+        current_member_data = []
+        ids_for_deletion = []
+        for member in members:
+            if member["deleted"] == False:
+                slack_id = member["id"]
+                real_name = member["real_name"]
+                current_member_data.append({"id":slack_id, "realname":real_name})
+
+            else:
+               ids_for_deletion.append(member["id"])
+
+
+        cur.executemany("INSERT INTO members VALUES(%(id)s, %(realname)s) ON CONFLICT (slack_id) DO UPDATE SET real_name = %(realname)s WHERE members.slack_id = %(id)s", current_member_data)
+        cur.executemany("DELETE FROM members WHERE slack_id = %s", *ids_for_deletion)
+
+        dbutils.commit_or_rollback(self.db)
     # post a message and return the timestamp of the message
     def post_message(self, message):
         res = self.client.api_call(
@@ -63,11 +83,12 @@ class AttendanceBot(object):
 
     def get_latest_post_data(self):
         cur = self.db.cursor()
-        cur.execute("select post_timestamp, channel_id from posts order by post_timestamp desc limit 1")
+        cur.execute("select post_timestamp, rehearsal_date, channel_id from posts order by post_timestamp desc limit 1")
         result = cur.fetchone()
         ts = result[0]
-        channel_id = result[1]
-        return {"ts": ts, "channel_id": channel_id}
+        date = result[1]
+        channel_id = result[2]
+        return {"ts": ts, "date": date, "channel_id": channel_id,}
 
     def get_reactions(self, ts, channel):
         res = self.client.api_call(
@@ -104,8 +125,20 @@ class AttendanceBot(object):
         dbutils.commit_or_rollback(self.db)
 
     def process_attendance(self):
-        pass
-
+        post_data = self.get_latest_post_data()
+        ts = post_data["ts"]
+        channel_id = post_data["channel_id"]
+        date = post_data["date"]
+        reactions = self.get_reactions(ts, channel_id)
+        for reaction in reactions:
+            if reaction["name"] == "thumbsup":
+                for user in reaction["users"]:
+                    self.record_presence(user, date)
+            elif reaction["name"] == "thumbsdown":
+                for user in reaction["users"]:
+                    self.record_absence(user, date)
+            else:
+                pass
 
 if __name__ == "__main__":
     # schedule the rehearsal message post
