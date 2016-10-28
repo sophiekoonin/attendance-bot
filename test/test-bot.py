@@ -124,8 +124,8 @@ class TestBot(unittest.TestCase):
     @patch("bot.SlackClient.api_call")
     @patch("bot.AttendanceBot.get_reactions")
     def test_process_attendance(self, mock_get_reactions, mock_api_call,):
-        expected_value = (True, True, False, True, None,)
-        mock_api_call.return_value = {"members": [{"id": "234567", "real_name": "Bob Loblaw", "deleted": False}, {"id": "345678", "real_name": "Michael Bluth", "deleted": False}, {"id": "101011", "real_name": "GOB Bluth", "deleted": True}]}
+        expected_value = [(None,), (True,), (True,), (True,), (False,)]
+        mock_api_call.return_value = {"members": [{"id": "23456", "real_name": "Bob Loblaw", "deleted": False}, {"id": "34567", "real_name": "Michael Bluth", "deleted": False}, {"id": "101011", "real_name": "GOB Bluth", "deleted": True}]}
         mock_get_reactions.return_value = [{"name":"thumbsup", "users":["12345", "23456", "45678"]},{"name":"thumbsdown", "users":["34567"]}]
         cur = self.test_db.cursor()
         cur.execute("insert into members values ('23456', 'Tobias Funke'),('34567', 'GOB Bluth'),('45678', 'Buster Bluth'), ('56789', 'George Michael Bluth')")
