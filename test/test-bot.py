@@ -85,18 +85,18 @@ class TestBot(unittest.TestCase):
         result = self.bot.get_real_name("12345")
         self.assertEqual(result, expected_value)
 
-    def test_record_attendance_present(self):
+    def test_record_presence(self):
         expected_value = True
         cur = self.test_db.cursor()
-        self.bot.record_attendance("12345", "31/10/16", )
+        self.bot.record_presence("12345", "31/10/16")
         cur.execute("select Present from Attendance where slack_id='12345' and rehearsal_date='31/10/16'")
         result = cur.fetchone()[0]
         self.assertEqual(result, expected_value)
 
-    def test_record_attendance_absent(self):
+    def test_record_absence(self):
         expected_value = False
         cur = self.test_db.cursor()
-        self.bot.record_attendance("12345", "31/10/16")
+        self.bot.record_absence("12345", "31/10/16")
         cur.execute("select Present from Attendance where slack_id='12345' and rehearsal_date='31/10/16'")
         result = cur.fetchone()[0]
         self.assertEqual(result, expected_value)
@@ -113,4 +113,3 @@ class TestBot(unittest.TestCase):
         cur.execute("DROP TABLE Members, Posts, Attendance")
         dbutils.commit_or_rollback(cls.test_db)
         cls.test_db.close()
-
