@@ -65,6 +65,11 @@ class TestBot(unittest.TestCase):
         result = self.bot.get_latest_post_data()
         self.assertEqual(result, expected_value)
 
+    def test_get_slack_id(self):
+        expected_value = "12345"
+        result = self.bot.get_slack_id("Bobby Tables")
+        self.assertEqual(result, expected_value)
+
     @patch("bot.SlackClient.api_call")
     def test_get_reactions(self, mock_api_call):
         expected_value = [{"name": "foo", "users": ["user1", "user2"]}]
