@@ -34,5 +34,26 @@ class TestApp(unittest.TestCase):
         })
         assert b"Sorry, I couldn't find anyone with that name. :confused:" in res.data
 
+    def test_process_attendance_get_help_with_message(self):
+        res = self.app.post('/here', data={
+            'text': "help",
+            'command': "here",
+            'token': self.token,
+            'team_id': self.team,
+            'method': ['POST']
+        })
+
+        assert b"I am the attendance bot! :robot::memo:" in res.data
+
+        def test_process_attendance_get_help_without_message(self):
+            res = self.app.post('/here', data={
+                'text': "",
+                'command': "here",
+                'token': self.token,
+                'team_id': self.team,
+                'method': ['POST']
+            })
+            assert b"I am the attendance bot! :robot::memo:" in res.data
+
     def dummy_func(self, slack_id, date):
         pass
