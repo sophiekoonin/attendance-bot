@@ -21,3 +21,14 @@ def commit_or_rollback(db):
         db.rollback()
     finally:
         pass
+
+def execute_with_cursor(db, query, *args):
+    cur = db.cursor()
+    cur.execute(query, args)
+    return cur
+
+def execute_fetchone(db, query, *args):
+    return execute_with_cursor(db, query, *args).fetchone()
+
+def execute_fetchall(db, query, *args):
+    return execute_with_cursor(db, query, *args).fetchall()
