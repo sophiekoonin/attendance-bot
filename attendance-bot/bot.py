@@ -69,11 +69,11 @@ class AttendanceBot(object):
             else:
                 ids_for_deletion.append((member["id"],))
 
-        insertion_query = ("INSERT INTO members VALUES(%(id)s, %(realname)s) "
+        query = ("INSERT INTO members VALUES(%(id)s, %(realname)s) "
                  "ON CONFLICT (slack_id) DO UPDATE "
                  "SET real_name = %(realname)s "
                  "WHERE members.slack_id = %(id)s")
-        cur.executemany(insertion_query, current_member_data)
+        cur.executemany(query, current_member_data)
         cur.executemany("DELETE FROM members WHERE slack_id = %s", ids_for_deletion)
         dbutils.commit_or_rollback(self.db)
 
@@ -114,8 +114,9 @@ class AttendanceBot(object):
         return ts
 
     def get_latest_post_data(self):
-        query = "SELECT post_timestamp, rehearsal_date, channel_id FROM posts ORDER BY post_timestamp DESC LIMIT 1"
-        result = dbutils.execute_fetchone(self.db, query)
+        cur = self.db.cursor()
+        cur.execute("select post_timestamp, rehearsal_date, channel_id from posts order by post_timestamp desc limit 1")
+        result = cur.fetchone()
         ts = result[0]
         date = result[1]
         channel_id = result[2]
@@ -145,7 +146,7 @@ class AttendanceBot(object):
 
     def record_attendance(self, slack_id, date, present):
         cur = self.db.cursor()
-        cur.execute("UPDATE attendance SET present=(%s) WHERE slack_id=(%s) AND rehearsal_date=(%s)",
+        cur.execute("UPDATE attendance SET present=(%s) c slack_id=(%s) AND rehearsal_date=(%s)",
                     (present, slack_id, date))
         dbutils.commit_or_rollback(self.db)
 
