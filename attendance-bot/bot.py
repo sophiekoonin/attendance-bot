@@ -115,7 +115,7 @@ class AttendanceBot(object):
 
     def get_latest_post_data(self):
         cur = self.db.cursor()
-        cur.execute("select post_timestamp, rehearsal_date, channel_id from posts order by post_timestamp desc limit 1")
+        cur.execute("SELECT post_timestamp, rehearsal_date, channel_id FROM posts ORDER BY post_timestamp DESC LIMIT 1")
         result = cur.fetchone()
         ts = result[0]
         date = result[1]
