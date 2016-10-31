@@ -42,13 +42,13 @@ def process_attendance(input_text, attendance_func):
     if len(input_text) == 0 or 'help' in input_text:
         return slack.response(HELP_TEXT)
     input_list = input_text.strip().split(',')
-    name = input_list[0]
-    date = input_list[1]
-    slack_id = bot.get_slack_id(name)
+    real_name = input_list[0].strip()
+    date = input_list[1].strip()
+    slack_id = bot.get_slack_id(real_name)
     if not slack_id:
         return slack.response("Sorry, I couldn't find anyone with that name. :confused:")
     attendance_func(slack_id, date)
-    return slack.response(("Thanks! I have updated attendance for {name} on {date}. :thumbsup:").format(name, date))
+    return slack.response(("Thanks! I have updated attendance for {real_name} on {date}. :thumbsup:").format(real_name=real_name, date=date))
 
 if __name__ == '__main__':
     app.run()
