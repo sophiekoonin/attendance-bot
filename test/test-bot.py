@@ -41,9 +41,8 @@ class TestBot(unittest.TestCase):
     def test_post_message_persists_timestamp(self, mock_api_call):
         mock_api_call.return_value = {"ts": "543210", "channel": "abc123"}
         self.bot.post_message("test_message")
-        cur = self.test_db.cursor()
-        cur.execute("SELECT * FROM posts WHERE post_timestamp='543210'")
-        result = cur.fetchone()
+        query = "SELECT * FROM posts WHERE post_timestamp='543210'"
+        result = dbutils.execute_fetchone(self.test_db, query)
         self.assertIsNotNone(result)
 
     @patch("bot.SlackClient.api_call")
@@ -52,9 +51,8 @@ class TestBot(unittest.TestCase):
         expected_value = "27/10/16"
         mock_api_call.return_value = {"ts": "1477581478", "channel": "abc123"}
         self.bot.post_message("test_message")
-        cur = self.test_db.cursor()
-        cur.execute("select rehearsal_date from posts where post_timestamp=(%s)", (test_ts,))
-        result = cur.fetchone()[0]
+        query = "select rehearsal_date from posts where post_timestamp=(%s)"
+        result = dbutils.execute_fetchone(self.test_db, query, (test_ts,))[0]
         self.assertEqual(result, expected_value)
 
     def test_get_latest_post_data(self):
@@ -95,25 +93,24 @@ class TestBot(unittest.TestCase):
         expected_value = [("12345",), ("234567",), ("345678",)]
         mock_api_call.return_value =   {"members": [{"id": "234567", "real_name": "Bob Loblaw", "deleted": False}, {"id": "345678", "real_name": "Michael Bluth", "deleted": False}, {"id": "101011", "real_name": "GOB Bluth", "deleted": True}]}
         self.bot.update_members()
-        cur = self.test_db.cursor()
-        cur.execute("select slack_id from members")
-        result = cur.fetchall()
+        result = dbutils.execute_fetchall(self.test_db, "select slack_id from members")
         self.assertEqual(result, expected_value)
 
     def test_record_presence(self):
         expected_value = True
         cur = self.test_db.cursor()
         self.bot.record_presence("12345", "31/10/16")
-        cur.execute("select Present from Attendance where slack_id='12345' and rehearsal_date='31/10/16'")
-        result = cur.fetchone()[0]
+        query = "select Present from Attendance where slack_id='12345' and rehearsal_date='31/10/16'"
+        result = dbutils.execute_fetchone(self.test_db, query)[0]
         self.assertEqual(result, expected_value)
 
     def test_record_absence(self):
         expected_value = False
         cur = self.test_db.cursor()
         self.bot.record_absence("12345", "31/10/16")
-        cur.execute("select Present from Attendance where slack_id='12345' and rehearsal_date='31/10/16'")
-        result = cur.fetchone()[0]
+        query = "select Present from Attendance where slack_id='12345' and rehearsal_date='31/10/16'"
+        result = dbutils.execute_fetchone(self.test_db, query)[0]
+
         self.assertEqual(result, expected_value)
 
     def test_update_attendance_table(self):
