@@ -128,6 +128,16 @@ class AttendanceBot(object):
         )
         return res.get("message").get("reactions")
 
+    def get_slack_id(self, real_name):
+        query = "SELECT slack_id FROM members WHERE real_name = (%s)"
+        result = dbutils.execute_fetchone(self.db, query, (real_name,))
+        if result is None:
+            self.update_members()
+            result = dbutils.execute_fetchone(self.db, query, (real_name,))
+            if result is None:
+                return result
+        return result[0]
+
     def record_presence(self, slack_id, date):
         self.record_attendance(slack_id, date, True)
 
@@ -173,7 +183,7 @@ if __name__ == "__main__":
 
     schedule(
         bot.settings.get("update-day"),
-        bot.settings.get("post-hour"),
-        bot.settings.get("post-minute"),
+        bot.settings.get("attendance-hour"),
+        bot.settings.get("attendance-minute"),
         bot.process_attendance(),
     )
