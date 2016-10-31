@@ -70,6 +70,20 @@ class TestBot(unittest.TestCase):
         result = self.bot.get_slack_id("Bobby Tables")
         self.assertEqual(result, expected_value)
 
+
+    @patch("bot.SlackClient.api_call")
+    def test_get_slack_id_not_present(self, mock_api_call):
+        expected_value = "234567"
+        mock_api_call.return_value =   {"members": [{"id": "234567", "real_name": "Bob Loblaw", "deleted": False}, {"id": "345678", "real_name": "Michael Bluth", "deleted": False}, {"id": "101011", "real_name": "GOB Bluth", "deleted": True}]}
+        result = self.bot.get_slack_id("Bob Loblaw")
+        self.assertEqual(result, expected_value)
+
+    @patch("bot.SlackClient.api_call")
+    def test_get_slack_id_non_existent(self, mock_api_call):
+        mock_api_call.return_value =   {"members": [{"id": "234567", "real_name": "Bob Loblaw", "deleted": False}, {"id": "345678", "real_name": "Michael Bluth", "deleted": False}, {"id": "101011", "real_name": "GOB Bluth", "deleted": True}]}
+        result = self.bot.get_slack_id("Buster Bluth")
+        self.assertIsNone(result)
+
     @patch("bot.SlackClient.api_call")
     def test_get_reactions(self, mock_api_call):
         expected_value = [{"name": "foo", "users": ["user1", "user2"]}]
