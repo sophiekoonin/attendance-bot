@@ -5,6 +5,8 @@ import os
 class TestApp(unittest.TestCase):
     def setUp(self):
         self.app = app.app.test_client()
+        self.token = os.environ['SLASH_TOKEN']
+        self.team = os.eviron['TEAM_ID']
 
 
     @patch("app.AttendanceBot.get_slack_id")
@@ -13,8 +15,8 @@ class TestApp(unittest.TestCase):
         res = self.app.post('/here', data={
             'text': "Bob Loblaw, 31/10/16",
             'command': "here",
-            'token': "lkcj497Oj2t4AQlRUH4Ivm1z",
-            'team_id': "T2RT9TS8M",
+            'token': self.token,
+            'team_id': self.team,
             'method': ['POST']
         })
         assert res.status_code == 200
@@ -26,8 +28,8 @@ class TestApp(unittest.TestCase):
         res = self.app.post('/here', data={
             'text': "Bob Loblaw, 31/10/16",
             'command': "here",
-            'token': "lkcj497Oj2t4AQlRUH4Ivm1z",
-            'team_id': "T2RT9TS8M",
+            'token': self.token,
+            'team_id': self.team,
             'method': ['POST']
         })
         assert b"Sorry, I couldn't find anyone with that name. :confused:" in res.data
