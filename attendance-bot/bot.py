@@ -20,7 +20,7 @@ def schedule(day, hour, mins, func, *args):
 class AttendanceBot(object):
     def __init__(self, settings):
         self.settings = settings
-        token = os.environ["BOT_TOKEN"]
+        token = os.environ.get("BOT_TOKEN")
 
         self.bot_name = settings.get("bot-name")
         self.bot_emoji = ":{emoji}:".format(emoji=settings.get("bot-emoji"))  # wrap emoji name in colons
@@ -177,7 +177,7 @@ if __name__ == "__main__":
         bot.settings.get("post-hour"),
         bot.settings.get("post-minute"),
         bot.post_message_with_reactions,
-        [bot.settings.get("rehearsal-message")]
+        [bot.settings.get("rehearsal-message").format()]
     )
 
     schedule(
