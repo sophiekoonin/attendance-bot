@@ -8,7 +8,6 @@ class TestApp(unittest.TestCase):
         self.token = os.environ.get('SLASH_TOKEN')
         self.team = os.environ.get('SLACK_TEAM_ID')
 
-
     @patch("app.AttendanceBot.get_slack_id")
     def test_process_attendance_present(self, mock_slack_id):
         mock_slack_id.return_value = "12345"
@@ -45,15 +44,15 @@ class TestApp(unittest.TestCase):
 
         assert b"I am the attendance bot! :robot::memo:" in res.data
 
-        def test_process_attendance_get_help_without_message(self):
-            res = self.app.post('/here', data={
-                'text': "",
-                'command': "here",
-                'token': self.token,
-                'team_id': self.team,
-                'method': ['POST']
-            })
-            assert b"I am the attendance bot! :robot::memo:" in res.data
+    def test_process_attendance_get_help_without_message(self):
+        res = self.app.post('/here', data={
+            'text': "",
+            'command': "here",
+            'token': self.token,
+            'team_id': self.team,
+            'method': ['POST']
+        })
+        assert b"I am the attendance bot! :robot::memo:" in res.data
 
     def dummy_func(self, slack_id, date):
         pass
