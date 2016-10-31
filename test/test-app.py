@@ -5,8 +5,8 @@ import os
 class TestApp(unittest.TestCase):
     def setUp(self):
         self.app = app.app.test_client()
-        self.token = os.environ['SLASH_TOKEN']
-        self.team = os.eviron['TEAM_ID']
+        self.token = os.environ.get('SLASH_TOKEN')
+        self.team = os.environ.get('SLACK_TEAM_ID')
 
 
     @patch("app.AttendanceBot.get_slack_id")
