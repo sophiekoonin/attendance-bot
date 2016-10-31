@@ -7,8 +7,8 @@ import yaml
 app = Flask(__name__)
 slack = Slack(app)
 bot = AttendanceBot(yaml.load(open('../settings.yaml')))
-SLASH_TOKEN = os.environ["SLASH_TOKEN"]
-TEAM_ID = "T2RT9TS8M"
+SLASH_TOKEN = os.environ.get("SLASH_TOKEN")
+TEAM_ID = os.environ.get("SLACK_TEAM_ID")
 HELP_TEXT = ("I am the attendance bot! :robot::memo:"
              "Type /here or /absent followed by full name, date as DD/MM/YY, "
              "separated by a comma. e.g.:\n"
