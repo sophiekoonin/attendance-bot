@@ -128,6 +128,27 @@ class TestBot(unittest.TestCase):
         result = cur.fetchall()
         self.assertEqual(result, expected_value)
 
+    def test_get_absent_names(self):
+        expected_value = ['GOB Bluth', 'Tobias Funke']
+        cur = self.test_db.cursor()
+        cur.execute("insert into members values ('23456', 'Tobias Funke'),('34567', 'GOB Bluth'),"
+                    "('45678', 'Buster Bluth'), ('56789', 'George Michael Bluth')")
+        cur.executemany("INSERT INTO Posts VALUES(%s, %s, %s)", (("1478908000", "01/11/16", "abc123"),
+                                                                 ("1479908000", "10/11/16", "abc123"),
+                                                                 ("1487908000", "15/11/16", "abc123"),
+                                                                 ("1497908000", "25/11/16", "abc123")))
+        cur.execute("insert into attendance(slack_id, post_timestamp) select m.slack_id, p.post_timestamp from members as m, posts as p on conflict do nothing")
+        cur.executemany("UPDATE attendance SET present=(%s) WHERE slack_id=(%s) AND post_timestamp=(%s)",
+                        ((True, '12345', '1477908000'), (True, '34567', '1477908000'), (True, '45678', '1477908000'),
+                        (False, '56789','1477908000'),
+                        (True, '12345', '1478908000'), (False, '34567', '1478908000'), (True, '56789', '1478908000'),
+                        (False, '12345', '1479908000'), (True, '34567', '1479908000'), (False, '56789', '1479908000'),
+                        (True, '34567', '1487908000'), (False, '56789', '1487908000'),
+                        (True, '12345', '1497908000'), (True, '34567', '1497908000'), (False,'56789','1497908000')))
+        dbutils.commit_or_rollback(self.test_db)
+        result = self.bot.get_absent_names()
+        self.assertEqual(result, expected_value)
+
     @patch("bot.SlackClient.api_call")
     @patch("bot.AttendanceBot.get_reactions")
     def test_process_attendance(self, mock_get_reactions, mock_api_call,):
