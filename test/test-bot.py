@@ -129,7 +129,6 @@ class TestBot(unittest.TestCase):
         self.assertEqual(result, expected_value)
 
     def test_get_absent_names(self):
-        expected_value = ['GOB Bluth', 'Tobias Funke']
         cur = self.test_db.cursor()
         cur.execute("insert into members values ('23456', 'Tobias Funke'),('34567', 'GOB Bluth'),"
                     "('45678', 'Buster Bluth'), ('56789', 'George Michael Bluth')")
@@ -147,7 +146,9 @@ class TestBot(unittest.TestCase):
                         (True, '12345', '1497908000'), (True, '34567', '1497908000'), (False,'56789','1497908000')))
         dbutils.commit_or_rollback(self.test_db)
         result = self.bot.get_absent_names()
-        self.assertEqual(result, expected_value)
+        assert "Tobias Funke" in result
+        assert "Buster Bluth" in result
+        assert len(result) == 2
 
     @patch("bot.SlackClient.api_call")
     @patch("bot.AttendanceBot.get_reactions")
