@@ -21,9 +21,11 @@ BAD_DATE = ("Sorry, that date doesn't seem to match up with any of our rehearsal
 BAD_NAME = "Sorry, I couldn't find anyone with that name. :confused:"
 THANKS = "Thanks! I have updated attendance for {real_name} on {date}. :thumbsup:"
 
+
 @app.route('/')
 def hello_world():
     return 'Hello World! Attendance bot is running and ready.'
+
 
 app.add_url_rule('/attendance', view_func=slack.dispatch)
 
@@ -40,12 +42,15 @@ def attendance(**kwargs):
         return slack.response(pause_jobs(input_text))
     elif 'resumejobs' in input_text:
         return slack.response(resume_jobs())
+    elif 'updatemembers' in input_text:
+        return slack.response(trigger_update(kwargs.get('user_id')))
     elif 'here' in input_text:
         return process_attendance(input_text, bot.record_presence)
     elif 'absent' in input_text:
         return process_attendance(input_text, bot.record_absence)
     else:
         return slack.response(BAD_COMMAND)
+
 
 def pause_jobs(input_text):
     input_list = input_text.strip().split(' ')
@@ -55,9 +60,18 @@ def pause_jobs(input_text):
     bot.pause_scheduled_jobs(date)
     return "I have been paused for {}! :sleeping:".format(date)
 
+
 def resume_jobs():
     bot.resume_scheduled_jobs()
     return "All jobs resumed. :thumbsup:"
+
+
+def trigger_update(user_id):
+    if bot.is_admin(user_id):
+        bot.update_members()
+        return "Member database has been updated. :thumbsup:"
+    return ":no_entry: Sorry, you don't have permission to do that. :closed_lock_with_key:"
+
 
 def process_attendance(input_text, attendance_func):
     input_list = input_text.strip().split(' ')
