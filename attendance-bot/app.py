@@ -15,6 +15,7 @@ HELP_TEXT = ("I am the attendance bot! :robot::memo:"
              "/here Beyoncé Knowles, 31/10/16\n"
              "/absent Chaka Khan, 02/01/17")
 
+
 @app.route('/')
 def hello_world():
     return 'Hello World! Attendance bot is running and ready.'
@@ -24,6 +25,7 @@ app.add_url_rule('/here', view_func=slack.dispatch)
 app.add_url_rule('/absent', view_func=slack.dispatch)
 app.add_url_rule('/attendance', view_func=slack.dispatch)
 
+
 @slack.command('attendance', token=SLASH_TOKEN,
                team_id=TEAM_ID, methods=['POST'])
 def get_attendance_details(**kwargs):
@@ -31,6 +33,7 @@ def get_attendance_details(**kwargs):
     if len(input_text) == 0 or 'report' not in input_text:
         return slack.response(HELP_TEXT)
     return slack.response(bot.create_absence_message())
+
 
 @slack.command('here', token=SLASH_TOKEN,
                team_id=TEAM_ID, methods=['POST'])
@@ -57,7 +60,10 @@ def process_attendance(input_text, attendance_func):
     if not slack_id:
         return slack.response("Sorry, I couldn't find anyone with that name. :confused:")
     attendance_func(slack_id, date)
-    return slack.response(("Thanks! I have updated attendance for {real_name} on {date}. :thumbsup:").format(real_name=real_name, date=date))
+    return slack.response(
+        "Thanks! I have updated attendance for {real_name} on {date}. :thumbsup:".format(real_name=real_name,
+                                                                                           date=date))
+
 
 if __name__ == '__main__':
     app.run()
