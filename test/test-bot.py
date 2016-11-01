@@ -68,6 +68,11 @@ class TestBot(unittest.TestCase):
         result = self.bot.get_slack_id("Bobby Tables")
         self.assertEqual(result, expected_value)
 
+    def test_get_timestamp(self):
+        expected_value = "1477908000"
+        result = self.bot.get_timestamp("31/10/16")
+        self.assertEqual(result, expected_value)
+
     @patch("bot.SlackClient.api_call")
     def test_get_slack_id_not_present(self, mock_api_call):
         expected_value = "234567"
