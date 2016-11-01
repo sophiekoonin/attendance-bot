@@ -14,7 +14,7 @@ def schedule(day, hour, mins, func, *args):
         func(*args)
 
     sched.start()
-    print("Post scheduled for {day} at {hour}:{mins}!".format(day=day, hour=hour, mins=mins))
+    print("Task scheduled for {day} at {hour}:{mins}!".format(day=day, hour=hour, mins=mins))
 
 
 class AttendanceBot(object):
