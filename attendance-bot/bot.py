@@ -202,6 +202,10 @@ class AttendanceBot(object):
             names.append(result_tuple[0])
         return names
 
+    def is_admin(self, slack_id):
+        res = self.client.api_call('users.info', user=slack_id)
+        return res.get("user").get("is_admin")
+
     def create_absence_message(self):
         msg = ":robot_face: :memo: The following members have been absent for the last 4 rehearsals: "
         msg += ''.join(self.get_absent_names())

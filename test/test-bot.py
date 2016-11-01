@@ -161,6 +161,12 @@ class TestBot(unittest.TestCase):
         result = cur.fetchall()
         self.assertEqual(result, expected_value)
 
+    @patch("bot.SlackClient.api_call")
+    def test_is_admin(self, mock_api_call):
+        mock_api_call.return_value = {"user": {"id": "U023BECGF", "name": "bobby", "is_admin": True}}
+        result = self.bot.is_admin("12345")
+        self.assertTrue(result)
+
     def set_up_db_for_absence_tests(self):
         cur = self.test_db.cursor()
         cur.execute("insert into members values ('23456', 'Tobias Funke'),('34567', 'GOB Bluth'),"
