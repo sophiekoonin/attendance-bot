@@ -12,7 +12,7 @@ TEAM_ID = os.environ.get("SLACK_TEAM_ID")
 HELP_TEXT = ("I am the attendance bot! :robot::memo:"
              "Type /here or /absent followed by full name, date as DD/MM/YY, "
              "separated by a comma. e.g.:\n"
-             "/here Beyoncé Knowles, 31/10/16\n"
+             "/here Beyonce Knowles, 31/10/16\n"
              "/absent Chaka Khan, 02/01/17")
 
 
