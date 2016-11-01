@@ -78,5 +78,15 @@ class TestApp(unittest.TestCase):
         })
         assert b"Date needed!" in res.data
 
+    def test_resume_job(self):
+        res = self.app.post('/attendance', data={
+            'text': "resumejobs",
+            'command': "attendance",
+            'token': self.token,
+            'team_id': self.team,
+            'method': ['POST']
+        })
+        assert b"jobs resumed" in res.data
+
     def dummy_func(self, slack_id, date):
         pass

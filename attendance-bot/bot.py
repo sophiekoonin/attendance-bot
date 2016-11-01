@@ -41,12 +41,11 @@ class AttendanceBot(object):
         self.scheduler.pause_job('msg')
         self.scheduler.pause_job('update')
         new_date = datetime.strptime(date, "%d/%m/%y") + timedelta(days=7)
+        self.scheduler.add_job(self.resume_scheduled_jobs, id='delay', trigger='date', next_run_time=new_date)
 
-        def resume_jobs():
-            self.scheduler.resume_job('msg')
-            self.scheduler.resume_job('update')
-
-        self.scheduler.add_job(resume_jobs, trigger='date', next_run_time=new_date)
+    def resume_scheduled_jobs(self):
+        self.scheduler.resume_job('msg')
+        self.scheduler.resume_job('update')
 
     def create_tables(self):
         cur = self.db.cursor()
