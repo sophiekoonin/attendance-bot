@@ -34,6 +34,21 @@ class AttendanceBot(object):
         self.db = dbutils.connect_to_db()
         self.create_tables()
 
+        schedule(
+            self.settings.get("rehearsal-day"),
+            self.settings.get("post-hour"),
+            self.settings.get("post-minute"),
+            self.post_message_with_reactions,
+            [self.settings.get("rehearsal-message").format()]
+        )
+
+        schedule(
+            self.settings.get("update-day"),
+            self.settings.get("attendance-hour"),
+            self.settings.get("attendance-minute"),
+            self.process_attendance(),
+        )
+
     def create_tables(self):
         cur = self.db.cursor()
 
@@ -193,22 +208,3 @@ class AttendanceBot(object):
         msg = ":robot: :memo: The following members have been absent for the last 4 rehearsals: "
         msg += ''.join(self.get_absent_names())
         return msg
-
-if __name__ == "__main__":
-    # schedule the rehearsal message post
-    bot = AttendanceBot(yaml.load(open('../settings.yaml')))
-
-    schedule(
-        bot.settings.get("rehearsal-day"),
-        bot.settings.get("post-hour"),
-        bot.settings.get("post-minute"),
-        bot.post_message_with_reactions,
-        [bot.settings.get("rehearsal-message").format()]
-    )
-
-    schedule(
-        bot.settings.get("update-day"),
-        bot.settings.get("attendance-hour"),
-        bot.settings.get("attendance-minute"),
-        bot.process_attendance(),
-    )
