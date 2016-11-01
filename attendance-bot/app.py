@@ -13,7 +13,7 @@ HELP_TEXT = ("I am the attendance bot! :robot_face::memo:"
              "Type `/attendance` followed by `here` or `absent`, the date as DD/MM/YY, and the name, e.g.:\n"
              "`/attendance here 02/10/17 Beyonce Knowles` \n"
              "`/attendance absent 02/01/17 Chaka Khan`")
-BAD_COMMAND = ("Sorry, I didn't understand that command. :disappointed"
+BAD_COMMAND = ("Sorry, I didn't understand that command. :disappointed:"
                "\nType `/attendance help` for instructions.")
 BAD_DATE = ("Sorry, that date doesn't seem to match up with any of our rehearsals. :confused:\n"
             "Please make sure you write it in the format DD/MM/YY and that it's a Monday!"
@@ -38,6 +38,8 @@ def attendance(**kwargs):
         return slack.response(bot.create_absence_message())
     elif 'bankholiday' in input_text:
         return slack.response(pause_jobs(input_text))
+    elif 'resumejobs' in input_text:
+        return slack.response(resume_jobs())
     elif 'here' in input_text:
         return process_attendance(input_text, bot.record_presence)
     elif 'absent' in input_text:
@@ -52,6 +54,10 @@ def pause_jobs(input_text):
     date = input_list[1]
     bot.pause_scheduled_jobs(date)
     return "I have been paused for {}! :sleeping:".format(date)
+
+def resume_jobs():
+    bot.resume_scheduled_jobs()
+    return "All jobs resumed. :thumbsup:"
 
 def process_attendance(input_text, attendance_func):
     input_list = input_text.strip().split(' ')
