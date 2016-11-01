@@ -46,7 +46,7 @@ class AttendanceBot(object):
             self.settings.get("update-day"),
             self.settings.get("update-hour"),
             self.settings.get("update-minute"),
-            self.process_attendance(),
+            self.process_attendance,
         )
 
     def create_tables(self):
