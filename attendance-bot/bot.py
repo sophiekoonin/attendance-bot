@@ -70,9 +70,9 @@ class AttendanceBot(object):
                 ids_for_deletion.append((member["id"],))
 
         insertion_query = ("INSERT INTO members VALUES(%(id)s, %(realname)s) "
-                 "ON CONFLICT (slack_id) DO UPDATE "
-                 "SET real_name = %(realname)s "
-                 "WHERE members.slack_id = %(id)s")
+                           "ON CONFLICT (slack_id) DO UPDATE "
+                           "SET real_name = %(realname)s "
+                           "WHERE members.slack_id = %(id)s")
         cur.executemany(insertion_query, current_member_data)
         cur.executemany("DELETE FROM members WHERE slack_id = %s", ids_for_deletion)
         dbutils.commit_or_rollback(self.db)
@@ -172,7 +172,6 @@ class AttendanceBot(object):
             else:
                 pass
 
-
     def get_absent_names(self):
         query = ("SELECT DISTINCT m.real_name "
                  "FROM (SELECT a.slack_id FROM attendance as a "
@@ -185,8 +184,8 @@ class AttendanceBot(object):
                  "AS Q NATURAL JOIN MEMBERS AS M")
         results = dbutils.execute_fetchall(self.db, query)
         names = []
-        for tuple in results:
-            names.append(tuple[0])
+        for result_tuple in results:
+            names.append(result_tuple[0])
         return names
 
     def create_report(self):
