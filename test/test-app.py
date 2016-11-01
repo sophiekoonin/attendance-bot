@@ -22,9 +22,7 @@ class TestApp(unittest.TestCase):
         assert b"The following members have been absent" in res.data
         assert b"Tobias Funke" in res.data
 
-    @patch("app.AttendanceBot.create_absence_message")
-    def test_attendance_report_noargs(self, mock_attendance_msg):
-        mock_attendance_msg.return_value = "The following members have been absent:\nTobias Funke\nBob Loblaw"
+    def test_attendance_noargs(self):
         res = self.app.post('/attendance', data={
             'text': "",
             'command': "attendance",
@@ -35,10 +33,19 @@ class TestApp(unittest.TestCase):
         assert res.status_code == 200
         assert b"I am the attendance bot! :robot::memo:" in res.data
 
+    def test_attendance_bad_args(self):
+        res = self.app.post('/attendance', data={
+            'text': "foo",
+            'command': "attendance",
+            'token': self.token,
+            'team_id': self.team,
+            'method': ['POST']
+        })
+        assert res.status_code == 200
+        assert b"Sorry, I didn't understand that command." in res.data
 
-    @patch("app.AttendanceBot.create_absence_message")
-    def test_attendance_report_help(self, mock_attendance_msg):
-        mock_attendance_msg.return_value = "The following members have been absent:\nTobias Funke\nBob Loblaw"
+
+    def test_attendance_help(self):
         res = self.app.post('/attendance', data={
             'text': "help",
             'command': "attendance",
@@ -49,52 +56,17 @@ class TestApp(unittest.TestCase):
         assert res.status_code == 200
         assert b"I am the attendance bot! :robot::memo:" in res.data
 
-
-    @patch("app.AttendanceBot.get_slack_id")
-    def test_process_attendance_present(self, mock_slack_id):
-        mock_slack_id.return_value = "12345"
-        res = self.app.post('/here', data={
-            'text': "Bob Loblaw, 31/10/16",
-            'command': "here",
+    @patch("app.AttendanceBot.get_timestamp")
+    def test_process_attendance_bad_date(self, mock_timestamp):
+        mock_timestamp.return_value = None
+        res = self.app.post('/attendance', data={
+            'text': "here 31/10/16 Bob Loblaw ",
+            'command': "attendance",
             'token': self.token,
             'team_id': self.team,
             'method': ['POST']
         })
-        assert res.status_code == 200
-        assert b"Thanks! I have updated attendance for Bob Loblaw on 31/10/16. :thumbsup:" in res.data
-
-    @patch("app.AttendanceBot.get_slack_id")
-    def test_process_attendance_not_member(self, mock_slack_id):
-        mock_slack_id.return_value = None
-        res = self.app.post('/here', data={
-            'text': "Bob Loblaw, 31/10/16",
-            'command': "here",
-            'token': self.token,
-            'team_id': self.team,
-            'method': ['POST']
-        })
-        assert b"Sorry, I couldn't find anyone with that name. :confused:" in res.data
-
-    def test_process_attendance_get_help_with_message(self):
-        res = self.app.post('/here', data={
-            'text': "help",
-            'command': "here",
-            'token': self.token,
-            'team_id': self.team,
-            'method': ['POST']
-        })
-
-        assert b"I am the attendance bot! :robot::memo:" in res.data
-
-    def test_process_attendance_get_help_without_message(self):
-        res = self.app.post('/here', data={
-            'text': "",
-            'command': "here",
-            'token': self.token,
-            'team_id': self.team,
-            'method': ['POST']
-        })
-        assert b"I am the attendance bot! :robot::memo:" in res.data
+        assert b"that date doesn\'t seem to match up" in res.data
 
     def dummy_func(self, slack_id, date):
         pass
