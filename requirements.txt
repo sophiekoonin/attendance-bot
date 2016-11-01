@@ -3,3 +3,4 @@ slackclient
 apscheduler
 psycopg2
 pyyaml
+flask_slack
