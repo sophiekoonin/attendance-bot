@@ -185,12 +185,14 @@ class AttendanceBot(object):
         results = dbutils.execute_fetchall(self.db, query)
         names = []
         for result_tuple in results:
+            names.append("\n")
             names.append(result_tuple[0])
         return names
 
-    def create_report(self):
-        pass
-
+    def create_absence_message(self):
+        msg = ":robot: :memo: The following members have been absent for the last 4 rehearsals: "
+        msg += ''.join(self.get_absent_names())
+        return msg
 
 if __name__ == "__main__":
     # schedule the rehearsal message post

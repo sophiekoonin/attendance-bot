@@ -129,26 +129,19 @@ class TestBot(unittest.TestCase):
         self.assertEqual(result, expected_value)
 
     def test_get_absent_names(self):
-        cur = self.test_db.cursor()
-        cur.execute("insert into members values ('23456', 'Tobias Funke'),('34567', 'GOB Bluth'),"
-                    "('45678', 'Buster Bluth'), ('56789', 'George Michael Bluth')")
-        cur.executemany("INSERT INTO Posts VALUES(%s, %s, %s)", (("1478908000", "01/11/16", "abc123"),
-                                                                 ("1479908000", "10/11/16", "abc123"),
-                                                                 ("1487908000", "15/11/16", "abc123"),
-                                                                 ("1497908000", "25/11/16", "abc123")))
-        cur.execute("insert into attendance(slack_id, post_timestamp) select m.slack_id, p.post_timestamp from members as m, posts as p on conflict do nothing")
-        cur.executemany("UPDATE attendance SET present=(%s) WHERE slack_id=(%s) AND post_timestamp=(%s)",
-                        ((True, '12345', '1477908000'), (True, '34567', '1477908000'), (True, '45678', '1477908000'),
-                        (False, '56789','1477908000'),
-                        (True, '12345', '1478908000'), (False, '34567', '1478908000'), (True, '56789', '1478908000'),
-                        (False, '12345', '1479908000'), (True, '34567', '1479908000'), (False, '56789', '1479908000'),
-                        (True, '34567', '1487908000'), (False, '56789', '1487908000'),
-                        (True, '12345', '1497908000'), (True, '34567', '1497908000'), (False,'56789','1497908000')))
-        dbutils.commit_or_rollback(self.test_db)
+        self.set_up_db_for_absence_tests()
         result = self.bot.get_absent_names()
+        assert "\n" in result
         assert "Tobias Funke" in result
         assert "Buster Bluth" in result
-        assert len(result) == 2
+        assert len(result) == 4
+
+    def test_create_absence_message(self):
+        self.set_up_db_for_absence_tests()
+        result = self.bot.create_absence_message()
+        assert "The following members have been absent" in result
+        assert "\nTobias Funke" in result
+        assert "\nBuster Bluth" in result
 
     @patch("bot.SlackClient.api_call")
     @patch("bot.AttendanceBot.get_reactions")
@@ -163,6 +156,25 @@ class TestBot(unittest.TestCase):
         cur.execute("select present from attendance where post_timestamp = '1477908000'")
         result = cur.fetchall()
         self.assertEqual(result, expected_value)
+
+    def set_up_db_for_absence_tests(self):
+        cur = self.test_db.cursor()
+        cur.execute("insert into members values ('23456', 'Tobias Funke'),('34567', 'GOB Bluth'),"
+                    "('45678', 'Buster Bluth'), ('56789', 'George Michael Bluth')")
+        cur.executemany("INSERT INTO Posts VALUES(%s, %s, %s)", (("1478908000", "01/11/16", "abc123"),
+                                                                 ("1479908000", "10/11/16", "abc123"),
+                                                                 ("1487908000", "15/11/16", "abc123"),
+                                                                 ("1497908000", "25/11/16", "abc123")))
+        cur.execute(
+            "insert into attendance(slack_id, post_timestamp) select m.slack_id, p.post_timestamp from members as m, posts as p on conflict do nothing")
+        cur.executemany("UPDATE attendance SET present=(%s) WHERE slack_id=(%s) AND post_timestamp=(%s)",
+                        ((True, '12345', '1477908000'), (True, '34567', '1477908000'), (True, '45678', '1477908000'),
+                         (False, '56789', '1477908000'),
+                         (True, '12345', '1478908000'), (False, '34567', '1478908000'), (True, '56789', '1478908000'),
+                         (False, '12345', '1479908000'), (True, '34567', '1479908000'), (False, '56789', '1479908000'),
+                         (True, '34567', '1487908000'), (False, '56789', '1487908000'),
+                         (True, '12345', '1497908000'), (True, '34567', '1497908000'), (False, '56789', '1497908000')))
+        dbutils.commit_or_rollback(self.test_db)
 
     def tearDown(self):
         cur = self.test_db.cursor()
