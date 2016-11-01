@@ -9,7 +9,7 @@ slack = Slack(app)
 bot = AttendanceBot(config)
 SLASH_TOKEN = os.environ.get("SLASH_TOKEN")
 TEAM_ID = os.environ.get("SLACK_TEAM_ID")
-HELP_TEXT = ("I am the attendance bot! :robot::memo:"
+HELP_TEXT = ("I am the attendance bot! :robot_face::memo:"
              "Type `/attendance` followed by `here` or `absent`, the date as DD/MM/YY, and the name, e.g.:\n"
              "`/attendance here 02/10/17 Beyonce Knowles` \n"
              "`/attendance absent 02/01/17 Chaka Khan`")

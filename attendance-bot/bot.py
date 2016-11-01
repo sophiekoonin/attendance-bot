@@ -204,6 +204,6 @@ class AttendanceBot(object):
         return names
 
     def create_absence_message(self):
-        msg = ":robot: :memo: The following members have been absent for the last 4 rehearsals: "
+        msg = ":robot_face: :memo: The following members have been absent for the last 4 rehearsals: "
         msg += ''.join(self.get_absent_names())
         return msg
