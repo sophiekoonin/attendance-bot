@@ -172,8 +172,25 @@ class AttendanceBot(object):
             else:
                 pass
 
+
+    def get_absent_names(self):
+        query = ("SELECT DISTINCT m.real_name "
+                 "FROM (SELECT a.slack_id FROM attendance as a "
+                 "WHERE a.post_timestamp IN "
+                 "(SELECT p.post_timestamp FROM posts AS p "
+                 "ORDER BY p.post_timestamp DESC LIMIT 4) "
+                 "AND a.present IS NULL "
+                 "GROUP BY slack_id "
+                 "HAVING COUNT(slack_id) = 4) "
+                 "AS Q NATURAL JOIN MEMBERS AS M")
+        results = dbutils.execute_fetchall(self.db, query)
+        names = []
+        for tuple in results:
+            names.append(tuple[0])
+        return names
+
     def create_report(self):
-        query = ("SELECT ")
+        pass
 
 
 if __name__ == "__main__":
