@@ -8,6 +8,48 @@ class TestApp(unittest.TestCase):
         self.token = os.environ.get('SLASH_TOKEN')
         self.team = os.environ.get('SLACK_TEAM_ID')
 
+    @patch("app.AttendanceBot.create_absence_message")
+    def test_attendance_report(self, mock_attendance_msg):
+        mock_attendance_msg.return_value = "The following members have been absent:\nTobias Funke\nBob Loblaw"
+        res = self.app.post('/attendance', data={
+            'text': "report",
+            'command': "attendance",
+            'token': self.token,
+            'team_id': self.team,
+            'method': ['POST']
+        })
+        assert res.status_code == 200
+        assert b"The following members have been absent" in res.data
+        assert b"Tobias Funke" in res.data
+
+    @patch("app.AttendanceBot.create_absence_message")
+    def test_attendance_report_noargs(self, mock_attendance_msg):
+        mock_attendance_msg.return_value = "The following members have been absent:\nTobias Funke\nBob Loblaw"
+        res = self.app.post('/attendance', data={
+            'text': "",
+            'command': "attendance",
+            'token': self.token,
+            'team_id': self.team,
+            'method': ['POST']
+        })
+        assert res.status_code == 200
+        assert b"I am the attendance bot! :robot::memo:" in res.data
+
+
+    @patch("app.AttendanceBot.create_absence_message")
+    def test_attendance_report_help(self, mock_attendance_msg):
+        mock_attendance_msg.return_value = "The following members have been absent:\nTobias Funke\nBob Loblaw"
+        res = self.app.post('/attendance', data={
+            'text': "help",
+            'command': "attendance",
+            'token': self.token,
+            'team_id': self.team,
+            'method': ['POST']
+        })
+        assert res.status_code == 200
+        assert b"I am the attendance bot! :robot::memo:" in res.data
+
+
     @patch("app.AttendanceBot.get_slack_id")
     def test_process_attendance_present(self, mock_slack_id):
         mock_slack_id.return_value = "12345"
