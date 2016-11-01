@@ -46,9 +46,9 @@ class AttendanceBot(object):
                        "channel_id varchar(255) NOT NULL)")
         attendance_query = ("CREATE TABLE IF NOT EXISTS attendance"
                             "(slack_id varchar(255) REFERENCES members(slack_id), "
-                            "rehearsal_date varchar(255) REFERENCES posts(rehearsal_date), "
+                            "post_timestamp varchar(255) REFERENCES posts(post_timestamp), "
                             "present boolean, "
-                            "PRIMARY KEY (slack_id, rehearsal_date))")
+                            "PRIMARY KEY (slack_id, post_timestamp))")
 
         cur.execute(members_query)
         cur.execute(posts_query)
@@ -77,11 +77,11 @@ class AttendanceBot(object):
         cur.executemany("DELETE FROM members WHERE slack_id = %s", ids_for_deletion)
         dbutils.commit_or_rollback(self.db)
 
-    def update_attendance_table(self, date):
-        query = ("INSERT INTO attendance(slack_id, rehearsal_date)"
+    def update_attendance_table(self, timestamp):
+        query = ("INSERT INTO attendance(slack_id, post_timestamp)"
                  "SELECT slack_id, %s FROM Members ON CONFLICT DO NOTHING")
         cur = self.db.cursor()
-        cur.execute(query, (date,))
+        cur.execute(query, (timestamp,))
         dbutils.commit_or_rollback(self.db)
 
     # post a message and return the timestamp of the message
@@ -114,12 +114,11 @@ class AttendanceBot(object):
         return ts
 
     def get_latest_post_data(self):
-        query = "SELECT post_timestamp, rehearsal_date, channel_id FROM posts ORDER BY post_timestamp DESC LIMIT 1"
+        query = "SELECT post_timestamp, channel_id FROM posts ORDER BY post_timestamp DESC LIMIT 1"
         result = dbutils.execute_fetchone(self.db, query)
         ts = result[0]
-        date = result[1]
-        channel_id = result[2]
-        return {"ts": ts, "date": date, "channel_id": channel_id, }
+        channel_id = result[1]
+        return {"ts": ts, "channel_id": channel_id}
 
     def get_reactions(self, ts, channel):
         res = self.client.api_call(
@@ -137,16 +136,23 @@ class AttendanceBot(object):
                 return result
         return result[0]
 
-    def record_presence(self, slack_id, date):
-        self.record_attendance(slack_id, date, True)
+    def get_timestamp(self, date):
+        query = "SELECT post_timestamp FROM posts WHERE rehearsal_date = (%s)"
+        result = dbutils.execute_fetchone(self.db, query, (date,))
+        if result is None:
+            return result
+        return result[0]
 
-    def record_absence(self, slack_id, date):
-        self.record_attendance(slack_id, date, False)
+    def record_presence(self, slack_id, timestamp):
+        self.record_attendance(slack_id, timestamp, True)
 
-    def record_attendance(self, slack_id, date, present):
+    def record_absence(self, slack_id, timestamp):
+        self.record_attendance(slack_id, timestamp, False)
+
+    def record_attendance(self, slack_id, timestamp, present):
         cur = self.db.cursor()
-        cur.execute("UPDATE attendance SET present=(%s) WHERE slack_id=(%s) AND rehearsal_date=(%s)",
-                    (present, slack_id, date))
+        cur.execute("UPDATE attendance SET present=(%s) WHERE slack_id=(%s) AND post_timestamp=(%s)",
+                    (present, slack_id, timestamp))
         dbutils.commit_or_rollback(self.db)
 
     def process_attendance(self):
@@ -154,18 +160,20 @@ class AttendanceBot(object):
         post_data = self.get_latest_post_data()
         ts = post_data["ts"]
         channel_id = post_data["channel_id"]
-        date = post_data["date"]
-        self.update_attendance_table(date)
+        self.update_attendance_table(ts)
         reactions = self.get_reactions(ts, channel_id)
         for reaction in reactions:
             if reaction["name"] == self.emoji_present:
                 for user in reaction["users"]:
-                    self.record_presence(user, date)
+                    self.record_presence(user, ts)
             elif reaction["name"] == self.emoji_absent:
                 for user in reaction["users"]:
-                    self.record_absence(user, date)
+                    self.record_absence(user, ts)
             else:
                 pass
+
+    def create_report(self):
+        query = ("SELECT ")
 
 
 if __name__ == "__main__":

@@ -17,13 +17,13 @@ class TestBot(unittest.TestCase):
         cur = cls.test_db.cursor()
         cur.execute("CREATE TABLE if not exists Members(slack_id varchar(255) not null primary key, real_name varchar(255) not null)")
         cur.execute("CREATE TABLE if not exists Posts(post_timestamp varchar(255) not null primary key, rehearsal_date varchar(255) unique not null, channel_id varchar(255) not null)")
-        cur.execute("CREATE TABLE if not exists Attendance(slack_id varchar(255) references Members(slack_id), rehearsal_date varchar(255) references Posts(rehearsal_date), Present boolean, primary key (slack_id, rehearsal_date))")
+        cur.execute("CREATE TABLE if not exists Attendance(slack_id varchar(255) references Members(slack_id), post_timestamp varchar(255) references Posts(post_timestamp), Present boolean, primary key (slack_id, rehearsal_date))")
         dbutils.commit_or_rollback(cls.test_db)
 
     def setUp(self):
         self.test_db.cursor().execute("INSERT INTO Members VALUES(%s, %s)", ("12345", "Bobby Tables"))
         self.test_db.cursor().execute("INSERT INTO Posts VALUES(%s, %s, %s)", ("1477908000", "31/10/16", "abc123"))
-        self.test_db.cursor().execute("INSERT INTO Attendance(slack_id,rehearsal_date) VALUES(%s, %s)", ("12345", "31/10/16"))
+        self.test_db.cursor().execute("INSERT INTO Attendance(slack_id, post_timestamp) VALUES(%s, %s)", ("12345", "1477908000"))
         dbutils.commit_or_rollback(self.test_db)
 
     def test_init_func(self):
@@ -59,7 +59,7 @@ class TestBot(unittest.TestCase):
         cur = self.test_db.cursor()
         cur.execute("insert into posts values('1477908005', '30/10/16', 'abc123'), ('1477908006', '32/10/16', 'abc123'), ('1477908007', '33/10/16', 'abc123')")
         dbutils.commit_or_rollback(self.test_db)
-        expected_value = {"ts": "1477908007", "date":"33/10/16", "channel_id": "abc123"}
+        expected_value = {"ts": "1477908007", "channel_id": "abc123"}
         result = self.bot.get_latest_post_data()
         self.assertEqual(result, expected_value)
 
@@ -99,16 +99,16 @@ class TestBot(unittest.TestCase):
     def test_record_presence(self):
         expected_value = True
         cur = self.test_db.cursor()
-        self.bot.record_presence("12345", "31/10/16")
-        query = "select Present from Attendance where slack_id='12345' and rehearsal_date='31/10/16'"
+        self.bot.record_presence("12345", "1477908000")
+        query = "select Present from Attendance where slack_id='12345' and post_timestamp = '1477908000'"
         result = dbutils.execute_fetchone(self.test_db, query)[0]
         self.assertEqual(result, expected_value)
 
     def test_record_absence(self):
         expected_value = False
         cur = self.test_db.cursor()
-        self.bot.record_absence("12345", "31/10/16")
-        query = "select Present from Attendance where slack_id='12345' and rehearsal_date='31/10/16'"
+        self.bot.record_absence("12345", "1477908000")
+        query = "select Present from Attendance where slack_id='12345' and post_timestamp = '1477908000'"
         result = dbutils.execute_fetchone(self.test_db, query)[0]
 
         self.assertEqual(result, expected_value)
@@ -118,8 +118,8 @@ class TestBot(unittest.TestCase):
         cur = self.test_db.cursor()
         cur.execute("insert into members values ('23456', 'Tobias Funke'),('34567', 'GOB Bluth')")
         dbutils.commit_or_rollback(self.test_db)
-        self.bot.update_attendance_table("31/10/16")
-        cur.execute("select slack_id from attendance where rehearsal_date = '31/10/16'")
+        self.bot.update_attendance_table("1477908000")
+        cur.execute("select slack_id from attendance where post_timestamp = '1477908000'")
         result = cur.fetchall()
         self.assertEqual(result, expected_value)
 
@@ -133,7 +133,7 @@ class TestBot(unittest.TestCase):
         cur.execute("insert into members values ('23456', 'Tobias Funke'),('34567', 'GOB Bluth'),('45678', 'Buster Bluth'), ('56789', 'George Michael Bluth')")
         dbutils.commit_or_rollback(self.test_db)
         self.bot.process_attendance()
-        cur.execute("select present from attendance where rehearsal_date='31/10/16'")
+        cur.execute("select present from attendance where post_timestamp = '1477908000'")
         result = cur.fetchall()
         self.assertEqual(result, expected_value)
 
