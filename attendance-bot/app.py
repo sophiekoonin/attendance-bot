@@ -17,7 +17,7 @@ HELP_TEXT = ("I am the attendance bot! :robot::memo:"
 
 @app.route('/')
 def hello_world():
-    return 'Hello World!'
+    return 'Hello World! Attendance bot is running and ready.'
 
 
 app.add_url_rule('/here', view_func=slack.dispatch)
