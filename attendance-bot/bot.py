@@ -203,7 +203,6 @@ class AttendanceBot(object):
             names.append(result_tuple[0])
         return names
 
-    @property
     def create_absence_message(self):
         msg = ":robot: :memo: The following members have been absent for the last 4 rehearsals: "
         msg += ''.join(self.get_absent_names())
