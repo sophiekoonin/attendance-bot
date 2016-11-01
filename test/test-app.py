@@ -31,7 +31,7 @@ class TestApp(unittest.TestCase):
             'method': ['POST']
         })
         assert res.status_code == 200
-        assert b"I am the attendance bot! :robot::memo:" in res.data
+        assert b"I am the attendance bot! :robot_face::memo:" in res.data
 
     def test_attendance_bad_args(self):
         res = self.app.post('/attendance', data={
@@ -54,7 +54,7 @@ class TestApp(unittest.TestCase):
             'method': ['POST']
         })
         assert res.status_code == 200
-        assert b"I am the attendance bot! :robot::memo:" in res.data
+        assert b"I am the attendance bot! :robot_face::memo:" in res.data
 
     @patch("app.AttendanceBot.get_timestamp")
     def test_process_attendance_bad_date(self, mock_timestamp):

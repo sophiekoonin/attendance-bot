@@ -21,14 +21,12 @@ class AttendanceBot(object):
         self.settings = settings
         token = os.environ.get("BOT_TOKEN")
 
-        self.bot_name = settings.get("bot-name")
-        self.bot_emoji = ":{emoji}:".format(emoji=settings.get("bot-emoji"))  # wrap emoji name in colons
+        self.bot_name = os.environ.get("BOT_NAME")
+        self.bot_emoji = ":{emoji}:".format(emoji=os.environ.get("BOT_EMOJI"))  # wrap emoji name in colons
         self.client = SlackClient(token)
-        self.channel = settings.get("channel")
-        self.emoji_present = settings.get("emoji-present")
-        self.emoji_absent = settings.get("emoji-absent")
-
-        self.sheet_id = settings.get("spreadsheet-id")
+        self.channel = os.environ.get("CHANNEL")
+        self.emoji_present = os.environ.get("EMOJI_PRESENT")
+        self.emoji_absent = os.environ.get("EMOJI_ABSENT")
 
         self.db = dbutils.connect_to_db()
         self.create_tables()
