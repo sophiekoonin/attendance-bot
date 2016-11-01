@@ -3,7 +3,6 @@ import os
 from apscheduler.schedulers.background import BackgroundScheduler
 import dbutils
 from datetime import datetime
-import yaml
 
 
 def schedule(day, hour, mins, func, *args):
@@ -204,6 +203,7 @@ class AttendanceBot(object):
             names.append(result_tuple[0])
         return names
 
+    @property
     def create_absence_message(self):
         msg = ":robot: :memo: The following members have been absent for the last 4 rehearsals: "
         msg += ''.join(self.get_absent_names())

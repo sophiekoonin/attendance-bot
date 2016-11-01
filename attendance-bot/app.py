@@ -32,7 +32,7 @@ def get_attendance_details(**kwargs):
     input_text = kwargs.get('text')
     if len(input_text) == 0 or 'report' not in input_text:
         return slack.response(HELP_TEXT)
-    return slack.response(bot.create_absence_message())
+    return slack.response(bot.create_absence_message)
 
 
 @slack.command('here', token=SLASH_TOKEN,
@@ -62,7 +62,7 @@ def process_attendance(input_text, attendance_func):
     attendance_func(slack_id, date)
     return slack.response(
         "Thanks! I have updated attendance for {real_name} on {date}. :thumbsup:".format(real_name=real_name,
-                                                                                           date=date))
+                                                                                         date=date))
 
 
 if __name__ == '__main__':
