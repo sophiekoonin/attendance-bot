@@ -1,5 +1,5 @@
+flask
 slackclient
-google-api-python-client
 apscheduler
 psycopg2
 pyyaml
