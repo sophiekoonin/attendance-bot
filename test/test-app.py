@@ -68,5 +68,15 @@ class TestApp(unittest.TestCase):
         })
         assert b"that date doesn\'t seem to match up" in res.data
 
+    def test_pause_job_no_args(self):
+        res = self.app.post('/attendance', data={
+            'text': "bankholiday",
+            'command': "attendance",
+            'token': self.token,
+            'team_id': self.team,
+            'method': ['POST']
+        })
+        assert b"Date needed!" in res.data
+
     def dummy_func(self, slack_id, date):
         pass

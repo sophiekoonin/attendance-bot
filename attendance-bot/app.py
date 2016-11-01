@@ -46,9 +46,9 @@ def attendance(**kwargs):
         return slack.response(BAD_COMMAND)
 
 def pause_jobs(input_text):
-    if len(input_text) < 2:
-        return "Date needed!"
     input_list = input_text.strip().split(' ')
+    if len(input_list) < 2:
+        return "Date needed!"
     date = input_list[1]
     bot.pause_scheduled_jobs(date)
     return "I have been paused for {}! :sleeping:".format(date)
