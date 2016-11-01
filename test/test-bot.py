@@ -1,8 +1,7 @@
-import json
+from settings import config
 import unittest
 from unittest.mock import patch
 from bot import AttendanceBot
-import yaml
 import dbutils
 
 
@@ -12,8 +11,7 @@ class TestBot(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        settings = yaml.load(open("../settings.yaml"))
-        cls.bot = AttendanceBot(settings)
+        cls.bot = AttendanceBot(config)
         cls.bot.create_tables()
 
     def setUp(self):

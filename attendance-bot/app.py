@@ -1,12 +1,12 @@
 from flask import Flask
+from settings import config
 from flask_slack import Slack
 from bot import AttendanceBot
 import os
-import yaml
 
 app = Flask(__name__)
 slack = Slack(app)
-bot = AttendanceBot(yaml.load(open('../settings.yaml')))
+bot = AttendanceBot(config)
 SLASH_TOKEN = os.environ.get("SLASH_TOKEN")
 TEAM_ID = os.environ.get("SLACK_TEAM_ID")
 HELP_TEXT = ("I am the attendance bot! :robot::memo:"
