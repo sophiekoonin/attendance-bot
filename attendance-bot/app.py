@@ -36,6 +36,8 @@ def attendance(**kwargs):
         return slack.response(HELP_TEXT)
     elif 'report' in input_text:
         return slack.response(bot.create_absence_message())
+    elif 'cancel' in input_text:
+        return slack.response(pause_jobs(input_text))
     elif 'here' in input_text:
         return process_attendance(input_text, bot.record_presence)
     elif 'absent' in input_text:
@@ -43,9 +45,15 @@ def attendance(**kwargs):
     else:
         return slack.response(BAD_COMMAND)
 
+def pause_jobs(input_text):
+    if len(input_text) < 2:
+        return "Date needed!"
+    input_list = input_text.strip().split(' ')
+    date = input_list[1]
+    bot.pause_scheduled_jobs(date)
+    return "Scheduled jobs have been paused for {}".format(date)
+
 def process_attendance(input_text, attendance_func):
-    if len(input_text) == 0 or 'help' in input_text:
-        return slack.response(HELP_TEXT)
     input_list = input_text.strip().split(' ')
     date = input_list[1]
     real_name = input_list[2:]

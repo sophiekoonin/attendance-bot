@@ -3,17 +3,7 @@ import os
 from apscheduler.schedulers.background import BackgroundScheduler
 import dbutils
 from datetime import datetime
-
-
-def schedule(day, hour, mins, func, *args):
-    sched = BackgroundScheduler()
-
-    @sched.scheduled_job('cron', day_of_week=day, hour=hour, minute=mins)
-    def scheduled_job():
-        func(*args)
-
-    sched.start()
-    print("Task scheduled for {day} at {hour}:{mins}!".format(day=day, hour=hour, mins=mins))
+from datetime import timedelta
 
 
 class AttendanceBot(object):
@@ -31,20 +21,32 @@ class AttendanceBot(object):
         self.db = dbutils.connect_to_db()
         self.create_tables()
 
-        schedule(
-            self.settings.get("rehearsal-day"),
-            self.settings.get("post-hour"),
-            self.settings.get("post-minute"),
-            self.post_message_with_reactions,
-            [self.settings.get("rehearsal-message").format()]
-        )
+        self.scheduler = BackgroundScheduler()
+        self.schedule_jobs(self.scheduler)
+        self.scheduler.start()
 
-        schedule(
-            self.settings.get("update-day"),
-            self.settings.get("update-hour"),
-            self.settings.get("update-minute"),
-            self.process_attendance,
-        )
+    def schedule_jobs(self, scheduler):
+        @scheduler.scheduled_job('cron', id='msg', day_of_week=self.settings.get("rehearsal-day"),
+                                 hour=self.settings.get("post-hour"), minute=self.settings.get("post-minute"))
+        def post_attendance_message():
+            self.post_message_with_reactions(self.settings.get("rehearsal-message"))
+
+        @scheduler.scheduled_job('cron', id='update', day_of_week=self.settings.get("update-day"),
+                                 hour=self.settings.get("update-hour"),
+                                 minute=self.settings.get("update-minute"))
+        def scheduled_update():
+            self.process_attendance()
+
+    def pause_scheduled_jobs(self, date):
+        self.scheduler.pause_job('msg')
+        self.scheduler.pause_job('update')
+        new_date = datetime.strptime(date, "%d/%m/%y") + timedelta(days=7)
+
+        def resume_jobs():
+            self.scheduler.resume_job('msg')
+            self.scheduler.resume_job('update')
+
+        self.scheduler.add_job(resume_jobs, trigger='date', next_run_time=new_date)
 
     def create_tables(self):
         cur = self.db.cursor()
