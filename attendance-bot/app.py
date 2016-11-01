@@ -36,7 +36,7 @@ def attendance(**kwargs):
         return slack.response(HELP_TEXT)
     elif 'report' in input_text:
         return slack.response(bot.create_absence_message())
-    elif 'cancel' in input_text:
+    elif 'bankholiday' in input_text:
         return slack.response(pause_jobs(input_text))
     elif 'here' in input_text:
         return process_attendance(input_text, bot.record_presence)
@@ -51,7 +51,7 @@ def pause_jobs(input_text):
     input_list = input_text.strip().split(' ')
     date = input_list[1]
     bot.pause_scheduled_jobs(date)
-    return "Scheduled jobs have been paused for {}".format(date)
+    return "I have been paused for {}! :sleeping:".format(date)
 
 def process_attendance(input_text, attendance_func):
     input_list = input_text.strip().split(' ')
