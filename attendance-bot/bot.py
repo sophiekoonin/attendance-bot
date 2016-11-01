@@ -44,8 +44,8 @@ class AttendanceBot(object):
 
         schedule(
             self.settings.get("update-day"),
-            self.settings.get("attendance-hour"),
-            self.settings.get("attendance-minute"),
+            self.settings.get("update-hour"),
+            self.settings.get("update-minute"),
             self.process_attendance(),
         )
 
