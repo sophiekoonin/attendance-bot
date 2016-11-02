@@ -59,10 +59,22 @@ class TestBot(unittest.TestCase):
         result = self.bot.get_latest_post_data()
         self.assertEqual(result, expected_value)
 
+    def test_get_latest_post_data_no_results(self):
+        cur = self.test_db.cursor()
+        cur.execute("DELETE from attendance")
+        cur.execute("DELETE from posts")
+        dbutils.commit_or_rollback(self.test_db)
+        result = self.bot.get_latest_post_data()
+        self.assertIsNone(result)
+
     def test_get_slack_id(self):
         expected_value = "12345"
         result = self.bot.get_slack_id("Bobby Tables")
         self.assertEqual(result, expected_value)
+
+    def test_get_slack_id_bad_id(self):
+        result = self.bot.get_slack_id("Foo Bar")
+        self.assertIsNone(result)
 
     def test_get_timestamp(self):
         expected_value = "1477908000"
@@ -134,7 +146,11 @@ class TestBot(unittest.TestCase):
         assert "\n" in result
         assert "Tobias Funke" in result
         assert "Buster Bluth" in result
-        assert len(result) == 4
+        assert len(result) is 4
+
+    def test_get_absent_names_none(self):
+        result = self.bot.get_absent_names()
+        assert len(result) is 0
 
     def test_create_absence_message(self):
         self.set_up_db_for_absence_tests()
@@ -142,6 +158,10 @@ class TestBot(unittest.TestCase):
         assert "The following members have been absent" in result
         assert "\nTobias Funke" in result
         assert "\nBuster Bluth" in result
+
+    def test_create_absence_message_no_absences(self):
+        result = self.bot.create_absence_message()
+        assert "Nobody has been absent" in result
 
     @patch("bot.SlackClient.api_call")
     @patch("bot.AttendanceBot.get_reactions")
