@@ -34,6 +34,7 @@ app.add_url_rule('/attendance', view_func=slack.dispatch)
                team_id=TEAM_ID, methods=['POST'])
 def attendance(**kwargs):
     input_text = kwargs.get('text')
+    user_id = kwargs.get('user_id')
     if len(input_text) == 0 or 'help' in input_text:
         return slack.response(HELP_TEXT)
     elif 'report' in input_text:
@@ -43,13 +44,21 @@ def attendance(**kwargs):
     elif 'resumejobs' in input_text:
         return slack.response(resume_jobs())
     elif 'updatemembers' in input_text:
-        return slack.response(trigger_update(kwargs.get('user_id')))
+        return slack.response(check_admin(user_id, trigger_update))
     elif 'here' in input_text:
-        return process_attendance(input_text, bot.record_presence)
+        return slack.response(process_attendance(input_text, bot.record_presence))
     elif 'absent' in input_text:
-        return process_attendance(input_text, bot.record_absence)
+        return slack.response(process_attendance(input_text, bot.record_absence))
+    elif 'ignore' in input_text:
+        return slack.response(check_admin(user_id, set_ignore, input_text))
     else:
         return slack.response(BAD_COMMAND)
+
+
+def check_admin(user_id, func, *args):
+    if bot.is_admin(user_id):
+        return func(*args)
+    return ":no_entry: Sorry, you don't have permission to do that. :closed_lock_with_key:"
 
 
 def pause_jobs(input_text):
@@ -58,7 +67,7 @@ def pause_jobs(input_text):
         return "Date needed!"
     date = input_list[1]
     bot.pause_scheduled_jobs(date)
-    return "I have been paused for {}! :sleeping:".format(date)
+    return "I have been paused until the week after {}! :sleeping:".format(date)
 
 
 def resume_jobs():
@@ -66,27 +75,39 @@ def resume_jobs():
     return "All jobs resumed. :thumbsup:"
 
 
-def trigger_update(user_id):
-    if bot.is_admin(user_id):
-        bot.update_members()
-        return "Member database has been updated. :thumbsup:"
-    return ":no_entry: Sorry, you don't have permission to do that. :closed_lock_with_key:"
+def trigger_update():
+    bot.update_members()
+    return "Member database has been updated. :thumbsup:"
+
+
+def set_ignore(input_text):
+    input_list = input_text.strip().split(' ')
+    if 'stop' in input_text:
+        flag = False
+        real_name = ' '.join(input_list[2:]).strip()
+    else:
+        flag = True
+        real_name = ' '.join(input_list[1:]).strip()
+    slack_id = bot.get_slack_id(real_name)
+    if slack_id is None:
+        return "Please check the name and try again."
+    bot.set_ignore(slack_id, flag)
+    return "{} has been set to ignore = {}.".format(real_name, flag)
 
 
 def process_attendance(input_text, attendance_func):
     msg = "You typed: `{}`\n".format(input_text)
     input_list = input_text.strip().split(' ')
     date = input_list[1]
-    real_name = input_list[2:]
+    real_name = ' '.join(input_list[2:]).strip()
     ts = bot.get_timestamp(date)
     if ts is None:
-        return slack.response(msg + BAD_DATE)
+        return msg + BAD_DATE
     slack_id = bot.get_slack_id(real_name)
     if not slack_id:
-        return slack.response(msg + BAD_NAME)
+        return msg + BAD_NAME
     attendance_func(slack_id, ts)
-    response = msg + THANKS.format(real_name=real_name, date=date)
-    return slack.response(response)
+    return msg + THANKS.format(real_name=real_name, date=date)
 
 
 if __name__ == '__main__':

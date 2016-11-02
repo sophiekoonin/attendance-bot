@@ -52,7 +52,8 @@ class AttendanceBot(object):
 
         members_query = ("CREATE TABLE IF NOT EXISTS members"
                          "(slack_id varchar(255) PRIMARY KEY, "
-                         "real_name varchar(255) NOT NULL)")
+                         "real_name varchar(255) NOT NULL,"
+                         "ignore boolean)")
         posts_query = ("CREATE TABLE IF NOT EXISTS posts"
                        "(post_timestamp varchar(255) PRIMARY KEY, "
                        "rehearsal_date varchar(255) UNIQUE NOT NULL, "
@@ -82,7 +83,7 @@ class AttendanceBot(object):
             else:
                 ids_for_deletion.append((member["id"],))
 
-        insertion_query = ("INSERT INTO members VALUES(%(id)s, %(realname)s) "
+        insertion_query = ("INSERT INTO members VALUES(%(id)s, %(realname)s, FALSE) "
                            "ON CONFLICT (slack_id) DO UPDATE "
                            "SET real_name = %(realname)s "
                            "WHERE members.slack_id = %(id)s")
@@ -92,7 +93,7 @@ class AttendanceBot(object):
 
     def update_attendance_table(self, timestamp):
         query = ("INSERT INTO attendance(slack_id, post_timestamp)"
-                 "SELECT slack_id, %s FROM Members ON CONFLICT DO NOTHING")
+                 "SELECT slack_id, %s FROM Members WHERE ignore = FALSE ON CONFLICT DO NOTHING")
         cur = self.db.cursor()
         cur.execute(query, (timestamp,))
         dbutils.commit_or_rollback(self.db)
@@ -171,6 +172,8 @@ class AttendanceBot(object):
     def process_attendance(self):
         self.update_members()
         post_data = self.get_latest_post_data()
+        if post_data is None:
+            return
         ts = post_data["ts"]
         channel_id = post_data["channel_id"]
         self.update_attendance_table(ts)
@@ -201,6 +204,11 @@ class AttendanceBot(object):
             names.append("\n")
             names.append(result_tuple[0])
         return names
+
+    def set_ignore(self, slack_id, flag):
+        query = "UPDATE members SET ignore = (%s) WHERE SLACK_ID = (%s)"
+        self.db.cursor().execute(query, (flag, slack_id))
+        dbutils.commit_or_rollback(self.db)
 
     def is_admin(self, slack_id):
         res = self.client.api_call('users.info', user=slack_id)
