@@ -120,5 +120,17 @@ class TestApp(unittest.TestCase):
         })
         assert b"Tobias Funke has been set to ignore = False" in res.data
 
-    def dummy_func(self, slack_id, date):
-        pass
+    @patch("app.AttendanceBot.is_admin")
+    def test_check_admin_true(self, mock_admin):
+        mock_admin.return_value = True
+        res = app.check_admin("12345", self.dummy_func)
+        self.assertTrue(res)
+
+    @patch("app.AttendanceBot.is_admin")
+    def test_check_admin_false(self, mock_admin):
+        mock_admin.return_value = False
+        res = app.check_admin("12345", self.dummy_func)
+        assert "Sorry, you don't have permission" in res
+
+    def dummy_func(self, *args):
+        return True
