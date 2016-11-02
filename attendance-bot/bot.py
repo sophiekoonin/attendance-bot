@@ -130,6 +130,8 @@ class AttendanceBot(object):
     def get_latest_post_data(self):
         query = "SELECT post_timestamp, channel_id FROM posts ORDER BY post_timestamp DESC LIMIT 1"
         result = dbutils.execute_fetchone(self.db, query)
+        if result is None:
+            return result
         ts = result[0]
         channel_id = result[1]
         return {"ts": ts, "channel_id": channel_id}
@@ -173,17 +175,17 @@ class AttendanceBot(object):
         self.update_members()
         post_data = self.get_latest_post_data()
         if post_data is None:
-            return
-        ts = post_data["ts"]
-        channel_id = post_data["channel_id"]
+            return  # Don't try to process attendance if there's nothing in posts db
+        ts = post_data.get("ts")
+        channel_id = post_data.get("channel_id")
         self.update_attendance_table(ts)
         reactions = self.get_reactions(ts, channel_id)
         for reaction in reactions:
-            if reaction["name"] == self.emoji_present:
-                for user in reaction["users"]:
+            if reaction.get("name") == self.emoji_present:
+                for user in reaction.get("users"):
                     self.record_presence(user, ts)
-            elif reaction["name"] == self.emoji_absent:
-                for user in reaction["users"]:
+            elif reaction.get("name") == self.emoji_absent:
+                for user in reaction.get("users"):
                     self.record_absence(user, ts)
             else:
                 pass
@@ -215,6 +217,9 @@ class AttendanceBot(object):
         return res.get("user").get("is_admin")
 
     def create_absence_message(self):
+        absent_list = self.get_absent_names()
+        if len(absent_list) == 0:
+            return "Nobody has been absent 4 weeks in a row! :tada:"
         msg = ":robot_face: :memo: The following members have been absent for the last 4 rehearsals: "
-        msg += ''.join(self.get_absent_names())
+        msg += ''.join(absent_list)
         return msg
