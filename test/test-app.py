@@ -88,5 +88,37 @@ class TestApp(unittest.TestCase):
         })
         assert b"jobs resumed" in res.data
 
+    @patch("app.AttendanceBot.get_slack_id")
+    @patch("app.AttendanceBot.is_admin")
+    @patch("app.AttendanceBot.set_ignore")
+    def test_set_ignore(self, mock_ignore, mock_admin, mock_slack_id):
+        mock_admin.return_value = True
+        mock_ignore.return_value = None
+        mock_slack_id.return_value = "12345"
+        res = self.app.post('/attendance', data= {
+            'text': 'ignore Tobias Funke',
+            'command': 'attendance',
+            'token': self.token,
+            'team_id': self.team,
+            'method': ['POST']
+        })
+        assert b"Tobias Funke has been set to ignore = True" in res.data
+
+    @patch("app.AttendanceBot.get_slack_id")
+    @patch("app.AttendanceBot.is_admin")
+    @patch("app.AttendanceBot.set_ignore")
+    def test_set_ignore_stop(self, mock_ignore, mock_admin, mock_slack_id):
+        mock_admin.return_value = True
+        mock_ignore.return_value = None
+        mock_slack_id.return_value = "12345"
+        res = self.app.post('/attendance', data={
+            'text': 'ignore stop Tobias Funke',
+            'command': 'attendance',
+            'token': self.token,
+            'team_id': self.team,
+            'method': ['POST']
+        })
+        assert b"Tobias Funke has been set to ignore = False" in res.data
+
     def dummy_func(self, slack_id, date):
         pass
