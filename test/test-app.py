@@ -68,7 +68,7 @@ class TestApp(unittest.TestCase):
         })
         assert b"that date doesn\'t seem to match up" in res.data
 
-    def test_pause_job_no_args(self):
+    def test_bankholiday_call_no_args(self):
         res = self.app.post('/attendance', data={
             'text': "bankholiday",
             'command': "attendance",
@@ -77,6 +77,18 @@ class TestApp(unittest.TestCase):
             'method': ['POST']
         })
         assert b"Date needed!" in res.data
+
+    @patch("app.AttendanceBot.pause_scheduled_jobs")
+    def test_bankholiday_call(self, mock_pause):
+        mock_pause.return_value = True
+        res = self.app.post('/attendance', data={
+            'text': "bankholiday 31/10/16",
+            'command': "attendance",
+            'token': self.token,
+            'team_id': self.team,
+            'method': ['POST']
+        })
+        assert b"I have been paused until the week after 31/10/16" in res.data
 
     def test_resume_job(self):
         res = self.app.post('/attendance', data={
