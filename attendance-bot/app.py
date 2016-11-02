@@ -9,14 +9,14 @@ slack = Slack(app)
 bot = AttendanceBot(config)
 SLASH_TOKEN = os.environ.get("SLASH_TOKEN")
 TEAM_ID = os.environ.get("SLACK_TEAM_ID")
-HELP_TEXT = ("I am the attendance bot! :robot_face::memo:"
+HELP_TEXT = ("I am the attendance bot! :robot_face::memo:\n"
              "Type `/attendance` followed by `here` or `absent`, the date as DD/MM/YY, and the name, e.g.:\n"
              "`/attendance here 02/10/17 Beyonce Knowles` \n"
              "`/attendance absent 02/01/17 Chaka Khan`")
 BAD_COMMAND = ("Sorry, I didn't understand that command. :disappointed:"
                "\nType `/attendance help` for instructions.")
 BAD_DATE = ("Sorry, that date doesn't seem to match up with any of our rehearsals. :confused:\n"
-            "Please make sure you write it in the format DD/MM/YY and that it's a Monday!"
+            "Please make sure you write it in the format DD/MM/YY and that it's a Monday!\n"
             "Type `/attendance help` for more info.")
 BAD_NAME = "Sorry, I couldn't find anyone with that name. :confused:"
 THANKS = "Thanks! I have updated attendance for {real_name} on {date}. :thumbsup:"
@@ -74,18 +74,19 @@ def trigger_update(user_id):
 
 
 def process_attendance(input_text, attendance_func):
+    msg = "You typed: `{}`\n".format(input_text)
     input_list = input_text.strip().split(' ')
     date = input_list[1]
     real_name = input_list[2:]
     ts = bot.get_timestamp(date)
     if ts is None:
-        return slack.response(BAD_DATE)
+        return slack.response(msg + BAD_DATE)
     slack_id = bot.get_slack_id(real_name)
     if not slack_id:
-        return slack.response(BAD_NAME)
+        return slack.response(msg + BAD_NAME)
     attendance_func(slack_id, ts)
-    return slack.response(
-        THANKS.format(real_name=real_name, date=date))
+    response = msg + THANKS.format(real_name=real_name, date=date)
+    return slack.response(response)
 
 
 if __name__ == '__main__':
