@@ -38,10 +38,16 @@ def executemany_with_cursor(db, query, *args):
         return None
 
 def execute_fetchone(db, query, *args):
-    return execute_with_cursor(db, query, *args).fetchone()
+    res = execute_with_cursor(db, query, *args)
+    if res is None:
+        return res
+    return res.fetchone()
 
 def execute_fetchall(db, query, *args):
-    return execute_with_cursor(db, query, *args).fetchall()
+    res = execute_with_cursor(db, query, *args)
+    if res is None:
+        return res
+    return res.fetchall()
 
 def execute_and_commit(db, query, *args):
     execute_with_cursor(db, query, *args)

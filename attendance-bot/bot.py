@@ -88,12 +88,12 @@ class AttendanceBot(object):
                            "SET real_name = %(realname)s "
                            "WHERE members.slack_id = %(id)s")
         cur.executemany(insertion_query, current_member_data)
-        cur.executemany("DELETE FROM members WHERE slack_id = %s", ids_for_deletion)
+        cur.executemany("DELETE FROM members WHERE slack_id = (%s)", ids_for_deletion)
         dbutils.commit_or_rollback(self.db)
 
     def update_attendance_table(self, timestamp):
         query = ("INSERT INTO attendance(slack_id, post_timestamp)"
-                 "SELECT slack_id, %s FROM Members WHERE ignore = FALSE ON CONFLICT DO NOTHING")
+                 "SELECT slack_id, (%s) FROM Members WHERE ignore = FALSE ON CONFLICT DO NOTHING")
         cur = self.db.cursor()
         cur.execute(query, (timestamp,))
         dbutils.commit_or_rollback(self.db)
@@ -166,10 +166,8 @@ class AttendanceBot(object):
         self.record_attendance(slack_id, timestamp, False)
 
     def record_attendance(self, slack_id, timestamp, present):
-        cur = self.db.cursor()
-        cur.execute("UPDATE attendance SET present=(%s) WHERE slack_id=(%s) AND post_timestamp=(%s)",
-                    (present, slack_id, timestamp))
-        dbutils.commit_or_rollback(self.db)
+        query = "UPDATE attendance SET present=(%s) WHERE slack_id=(%s) AND post_timestamp=(%s)"
+        dbutils.execute_and_commit(self.db, query, [present, slack_id, timestamp])
 
     def process_attendance(self):
         self.update_members()
@@ -209,8 +207,7 @@ class AttendanceBot(object):
 
     def set_ignore(self, slack_id, flag):
         query = "UPDATE members SET ignore = (%s) WHERE SLACK_ID = (%s)"
-        self.db.cursor().execute(query, (flag, slack_id))
-        dbutils.commit_or_rollback(self.db)
+        dbutils.execute_and_commit(self.db, query, [flag, slack_id])
 
     def is_admin(self, slack_id):
         res = self.client.api_call('users.info', user=slack_id)

@@ -51,10 +51,8 @@ class TestBot(unittest.TestCase):
         self.assertEqual(result, expected_value)
 
     def test_get_latest_post_data(self):
-        cur = self.test_db.cursor()
-        cur.execute("insert into posts values('1477908005', '30/10/16', 'abc123'), "
+        dbutils.execute_and_commit(self.test_db,"insert into posts values('1477908005', '30/10/16', 'abc123'), "
                     "('1477908006', '32/10/16', 'abc123'), ('1477908007', '33/10/16', 'abc123')")
-        dbutils.commit_or_rollback(self.test_db)
         expected_value = {"ts": "1477908007", "channel_id": "abc123"}
         result = self.bot.get_latest_post_data()
         self.assertEqual(result, expected_value)
@@ -76,11 +74,6 @@ class TestBot(unittest.TestCase):
         result = self.bot.get_slack_id("Foo Bar")
         self.assertIsNone(result)
 
-    def test_get_timestamp(self):
-        expected_value = "1477908000"
-        result = self.bot.get_timestamp("31/10/16")
-        self.assertEqual(result, expected_value)
-
     @patch("bot.SlackClient.api_call")
     def test_get_slack_id_not_present(self, mock_api_call):
         expected_value = "234567"
@@ -96,6 +89,15 @@ class TestBot(unittest.TestCase):
                                                   {"id": "345678", "real_name": "Michael Bluth", "deleted": False},
                                                   {"id": "101011", "real_name": "GOB Bluth", "deleted": True}]}
         result = self.bot.get_slack_id("Buster Bluth")
+        self.assertIsNone(result)
+
+    def test_get_timestamp(self):
+        expected_value = "1477908000"
+        result = self.bot.get_timestamp("31/10/16")
+        self.assertEqual(result, expected_value)
+
+    def test_get_timestamp_bad_ts(self):
+        result = self.bot.get_timestamp("32/10/16")
         self.assertIsNone(result)
 
     @patch("bot.SlackClient.api_call")
@@ -132,12 +134,9 @@ class TestBot(unittest.TestCase):
 
     def test_update_attendance_table(self):
         expected_value = [("12345",), ("23456",), ("34567",)]
-        cur = self.test_db.cursor()
-        cur.execute("insert into members values ('23456', 'Tobias Funke', FALSE ),('34567', 'GOB Bluth', FALSE)")
-        dbutils.commit_or_rollback(self.test_db)
+        dbutils.execute_and_commit(self.test_db, "insert into members values ('23456', 'Tobias Funke', FALSE ),('34567', 'GOB Bluth', FALSE)")
         self.bot.update_attendance_table("1477908000")
-        cur.execute("select slack_id from attendance where post_timestamp = '1477908000'")
-        result = cur.fetchall()
+        result = dbutils.execute_fetchall(self.test_db, "select slack_id from attendance where post_timestamp = '1477908000'")
         self.assertEqual(result, expected_value)
 
     def test_get_absent_names(self):
@@ -172,13 +171,10 @@ class TestBot(unittest.TestCase):
                                                   {"id": "101011", "real_name": "GOB Bluth", "deleted": True}]}
         mock_get_reactions.return_value = [{"name": "thumbsup", "users": ["12345", "23456", "45678"]},
                                            {"name": "thumbsdown", "users": ["34567"]}]
-        cur = self.test_db.cursor()
-        cur.execute("insert into members values ('23456', 'Tobias Funke', FALSE),('34567', 'GOB Bluth', FALSE),"
+        dbutils.execute_and_commit(self.test_db, "insert into members values ('23456', 'Tobias Funke', FALSE),('34567', 'GOB Bluth', FALSE),"
                     "('45678', 'Buster Bluth', FALSE), ('56789', 'George Michael Bluth', FALSE)")
-        dbutils.commit_or_rollback(self.test_db)
         self.bot.process_attendance()
-        cur.execute("select present from attendance where post_timestamp = '1477908000'")
-        result = cur.fetchall()
+        result = dbutils.execute_fetchall(self.test_db,"select present from attendance where post_timestamp = '1477908000'")
         self.assertEqual(result, expected_value)
 
     @patch("bot.SlackClient.api_call")
@@ -215,7 +211,7 @@ class TestBot(unittest.TestCase):
         test_id = "12345"
         self.bot.set_ignore(test_id, True)
         query = "SELECT ignore FROM members WHERE slack_id=(%s)"
-        res = dbutils.execute_fetchone(self.test_db, query, test_id)[0]
+        res = dbutils.execute_fetchone(self.test_db, query, (test_id,))[0]
         self.assertTrue(res)
 
     def set_up_db_for_absence_tests(self):
@@ -239,9 +235,7 @@ class TestBot(unittest.TestCase):
         dbutils.commit_or_rollback(self.test_db)
 
     def tearDown(self):
-        cur = self.test_db.cursor()
-        cur.execute("delete from attendance; delete from posts; delete from members")
-        dbutils.commit_or_rollback(self.test_db)
+        dbutils.execute_and_commit(self.test_db, "delete from attendance; delete from posts; delete from members")
 
     @classmethod
     def tearDownClass(cls):
