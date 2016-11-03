@@ -22,9 +22,20 @@ def commit_or_rollback(db):
         pass
 
 def execute_with_cursor(db, query, *args):
-    cur = db.cursor()
-    cur.execute(query, args)
-    return cur
+    try:
+        cur = db.cursor()
+        cur.execute(query, *args)
+        return cur
+    except psycopg2.Error as e:
+        return None
+
+def executemany_with_cursor(db, query, *args):
+    try:
+        cur = db.cursor()
+        cur.executemany(query, *args)
+        return cur
+    except psycopg2.Error as e:
+        return None
 
 def execute_fetchone(db, query, *args):
     return execute_with_cursor(db, query, *args).fetchone()
@@ -33,5 +44,9 @@ def execute_fetchall(db, query, *args):
     return execute_with_cursor(db, query, *args).fetchall()
 
 def execute_and_commit(db, query, *args):
-    execute_with_cursor(db, query, args)
+    execute_with_cursor(db, query, *args)
+    commit_or_rollback(db)
+
+def executemany_and_commit(db, query, *args):
+    executemany_with_cursor(db, query, *args)
     commit_or_rollback(db)
