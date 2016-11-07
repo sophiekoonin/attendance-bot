@@ -20,7 +20,10 @@ BAD_DATE = ("Sorry, that date doesn't seem to match up with any of our rehearsal
             "Type `/attendance help` for more info.")
 BAD_NAME = "Sorry, I couldn't find anyone with that name. :confused:"
 THANKS = "Thanks! I have updated attendance for {real_name} on {date}. :thumbsup:"
-
+ATTENDANCE_MSG = (":dancing_banana: Rehearsal day! :dancing_banana: Please indicate whether"
+                     " or not you can attend tonight by responding with :thumbsup: (present) or "
+                     ":thumbsdown: (absent).\nIf you want to RSVP on behalf of someone else,"
+                     " please type /attendance for instructions.")
 
 @app.route('/')
 def hello_world():
@@ -39,41 +42,32 @@ def attendance(**kwargs):
         return slack.response(HELP_TEXT)
     elif 'report' in input_text:
         return slack.response(bot.create_absence_message())
-    elif 'bankholiday' in input_text:
-        return slack.response(pause_jobs(input_text))
-    elif 'resumejobs' in input_text:
-        return slack.response(resume_jobs())
     elif 'updatemembers' in input_text:
         return slack.response(check_admin(user_id, trigger_update))
+    elif 'post' in input_text:
+        return slack.response(check_admin(user_id,post_attendance_message))
+    elif 'process' in input_text:
+        return slack.response(check_admin(user_id,process_all))
     elif 'here' in input_text:
-        return slack.response(process_attendance(input_text, bot.record_presence))
+        return slack.response(process_single_attendance(input_text, bot.record_presence))
     elif 'absent' in input_text:
-        return slack.response(process_attendance(input_text, bot.record_absence))
+        return slack.response(process_single_attendance(input_text, bot.record_absence))
     elif 'ignore' in input_text:
         return slack.response(check_admin(user_id, set_ignore, input_text))
     else:
         return slack.response(BAD_COMMAND)
 
+def post_attendance_message():
+    bot.post_message_with_reactions(ATTENDANCE_MSG)
+    return "OK, posting a message now."
+
+def process_all():
+    return bot.process_attendance()
 
 def check_admin(user_id, func, *args):
     if bot.is_admin(user_id):
         return func(*args)
     return ":no_entry: Sorry, you don't have permission to do that. :closed_lock_with_key:"
-
-
-def pause_jobs(input_text):
-    input_list = input_text.strip().split(' ')
-    if len(input_list) < 2:
-        return "Date needed!"
-    date = input_list[1]
-    bot.pause_scheduled_jobs(date)
-    return "I have been paused until the week after {}! :sleeping:".format(date)
-
-
-def resume_jobs():
-    bot.resume_scheduled_jobs()
-    return "All jobs resumed. :thumbsup:"
-
 
 def trigger_update():
     bot.update_members()
@@ -95,7 +89,7 @@ def set_ignore(input_text):
     return "{} has been set to ignore = {}.".format(real_name, flag)
 
 
-def process_attendance(input_text, attendance_func):
+def process_single_attendance(input_text, attendance_func):
     msg = "You typed: `{}`\n".format(input_text)
     input_list = input_text.strip().split(' ')
     date = input_list[1]

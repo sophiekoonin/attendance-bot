@@ -1,9 +1,7 @@
 from slackclient import SlackClient
 import os
-from apscheduler.schedulers.background import BackgroundScheduler
 import dbutils
 from datetime import datetime
-from datetime import timedelta
 
 
 class AttendanceBot(object):
@@ -20,32 +18,6 @@ class AttendanceBot(object):
 
         self.db = dbutils.connect_to_db()
         self.create_tables()
-
-        self.scheduler = BackgroundScheduler()
-        self.schedule_jobs(self.scheduler)
-        self.scheduler.start()
-
-    def schedule_jobs(self, scheduler):
-        @scheduler.scheduled_job('cron', id='msg', day_of_week=self.settings.get("rehearsal-day"),
-                                 hour=self.settings.get("post-hour"), minute=self.settings.get("post-minute"))
-        def post_attendance_message():
-            self.post_message_with_reactions(self.settings.get("rehearsal-message"))
-
-        @scheduler.scheduled_job('cron', id='update', day_of_week=self.settings.get("update-day"),
-                                 hour=self.settings.get("update-hour"),
-                                 minute=self.settings.get("update-minute"))
-        def scheduled_update():
-            self.process_attendance()
-
-    def pause_scheduled_jobs(self, date):
-        self.scheduler.pause_job('msg')
-        self.scheduler.pause_job('update')
-        new_date = datetime.strptime(date, "%d/%m/%y") + timedelta(days=7)
-        self.scheduler.add_job(self.resume_scheduled_jobs, id='delay', trigger='date', next_run_time=new_date)
-
-    def resume_scheduled_jobs(self):
-        self.scheduler.resume_job('msg')
-        self.scheduler.resume_job('update')
 
     def create_tables(self):
         cur = self.db.cursor()
@@ -108,7 +80,7 @@ class AttendanceBot(object):
         channel_id = res.get("channel")
 
         post_date = datetime.fromtimestamp(float(ts)).strftime("%d/%m/%y")
-        self.db.cursor().execute("INSERT INTO posts VALUES(%s, %s, %s)", (ts, post_date, channel_id))
+        self.db.cursor().execute("INSERT INTO posts VALUES(%s, %s, %s) ON CONFLICT DO NOTHING", (ts, post_date, channel_id))
         dbutils.commit_or_rollback(self.db)
         return [ts, channel_id]
 
@@ -173,20 +145,25 @@ class AttendanceBot(object):
         self.update_members()
         post_data = self.get_latest_post_data()
         if post_data is None:
-            return  # Don't try to process attendance if there's nothing in posts db
+            return "Nothing to process!"  # Don't try to process attendance if there's nothing in posts db
         ts = post_data.get("ts")
         channel_id = post_data.get("channel_id")
         self.update_attendance_table(ts)
         reactions = self.get_reactions(ts, channel_id)
+        present_count = 0
+        absent_count = 0
         for reaction in reactions:
             if reaction.get("name") == self.emoji_present:
                 for user in reaction.get("users"):
+                    present_count += 1
                     self.record_presence(user, ts)
             elif reaction.get("name") == self.emoji_absent:
                 for user in reaction.get("users"):
+                    absent_count += 1
                     self.record_absence(user, ts)
             else:
                 pass
+        return "Attendance processed! There were {} present and {} absences.".format(present_count, absent_count)
 
     def get_absent_names(self):
         query = ("SELECT DISTINCT m.real_name "
