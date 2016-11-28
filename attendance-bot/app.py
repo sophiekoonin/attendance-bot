@@ -20,7 +20,7 @@ BAD_DATE = ("Sorry, that date doesn't seem to match up with any of our rehearsal
             "Type `/attendance help` for more info.")
 BAD_NAME = "Sorry, I couldn't find anyone with that name. :confused:"
 THANKS = "Thanks! I have updated attendance for {real_name} on {date}. :thumbsup:"
-ATTENDANCE_MSG = (":dancing_banana: Rehearsal day! :dancing_banana: @channel Please indicate whether"
+ATTENDANCE_MSG = (":dancing_banana: Rehearsal day! :dancing_banana: <!channel> Please indicate whether"
                      " or not you can attend tonight by reacting to this message with :thumbsup: (present) or "
                      ":thumbsdown: (absent).\nIf you want to RSVP on behalf of someone else,"
                      " please type /attendance for instructions.")
