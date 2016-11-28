@@ -60,7 +60,7 @@ class AttendanceBot(object):
                            "SET real_name = %(realname)s "
                            "WHERE members.slack_id = %(id)s")
         cur.executemany(insertion_query, current_member_data)
-        cur.executemany("DELETE FROM members WHERE slack_id = (%s)", ids_for_deletion)
+        cur.executemany("DELETE FROM members, attendance WHERE slack_id = (%s)", ids_for_deletion)
         dbutils.commit_or_rollback(self.db)
 
     def update_attendance_table(self, timestamp):
