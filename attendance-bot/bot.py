@@ -31,7 +31,7 @@ class AttendanceBot(object):
                        "rehearsal_date varchar(255) UNIQUE NOT NULL, "
                        "channel_id varchar(255) NOT NULL)")
         attendance_query = ("CREATE TABLE IF NOT EXISTS attendance"
-                            "(slack_id varchar(255) REFERENCES members(slack_id), "
+                            "(slack_id varchar(255) REFERENCES members(slack_id) ON DELETE CASCADE, "
                             "post_timestamp varchar(255) REFERENCES posts(post_timestamp), "
                             "present boolean, "
                             "PRIMARY KEY (slack_id, post_timestamp))")
