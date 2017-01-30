@@ -22,7 +22,7 @@ BAD_NAME = "Sorry, I couldn't find anyone with that name. :confused:"
 THANKS = "Thanks! I have updated attendance for {real_name} on {date}. :thumbsup:"
 ATTENDANCE_MSG = (":dancing_banana: Rehearsal day! :dancing_banana: <!channel> Please indicate whether"
                      " or not you can attend tonight by reacting to this message with :thumbsup: (present) or "
-                     ":thumbsdown: (absent).\nTo volunteer for Physical warm wp, respond with :muscle:. For Musical warm up, respond with :musical_note:.")
+                     ":thumbsdown: (absent).\nTo volunteer for Physical warm up, respond with :muscle:. For Musical warm up, respond with :musical_note:.")
 
 @app.route('/')
 def hello_world():
