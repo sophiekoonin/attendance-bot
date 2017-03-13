@@ -178,7 +178,7 @@ class AttendanceBot(object):
                  "FROM (SELECT a.slack_id FROM attendance as a "
                  "WHERE a.post_timestamp IN "
                  "(SELECT p.post_timestamp FROM posts AS p "
-                 "ORDER BY p.post_timestamp DESC LIMIT 4) "
+                 "ORDER BY p.post_timestamp DESC LIMIT 5) "
                  "AND a.present IS NULL "
                  "GROUP BY slack_id "
                  "HAVING COUNT(slack_id) = 4) "
