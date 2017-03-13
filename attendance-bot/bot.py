@@ -141,13 +141,7 @@ class AttendanceBot(object):
         query = "UPDATE attendance SET present=(%s) WHERE slack_id=(%s) AND post_timestamp=(%s)"
         dbutils.execute_and_commit(self.db, query, [present, slack_id, timestamp])
 
-    def process_attendance(self):
-        self.update_members()
-        post_data = self.get_latest_post_data()
-        if post_data is None:
-            return "Nothing to process!"  # Don't try to process attendance if there's nothing in posts db
-        ts = post_data.get("ts")
-        channel_id = post_data.get("channel_id")
+    def process_with_ts(self, ts, channel_id):
         self.update_attendance_table(ts)
         reactions = self.get_reactions(ts, channel_id)
         present_count = 0
@@ -164,6 +158,20 @@ class AttendanceBot(object):
             else:
                 pass
         return "Attendance processed! There were {} present and {} absences.".format(present_count, absent_count)
+
+    def process_with_date(self, date):
+        ts = self.get_timestamp(date)
+        channel_id = self.get_latest_post_data().get("channel_id")
+        return self.process_with_ts(ts, channel_id)
+
+    def process_attendance(self):
+        self.update_members()
+        post_data = self.get_latest_post_data()
+        if post_data is None:
+            return "Nothing to process!"  # Don't try to process attendance if there's nothing in posts db
+        ts = post_data.get("ts")
+        channel_id = post_data.get("channel_id")
+        return self.process_with_ts(ts, channel_id)
 
     def get_absent_names(self):
         query = ("SELECT DISTINCT m.real_name "

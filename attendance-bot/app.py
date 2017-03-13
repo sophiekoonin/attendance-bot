@@ -53,12 +53,19 @@ def attendance(**kwargs):
         return slack.response(process_single_attendance(input_text, bot.record_absence))
     elif 'ignore' in input_text:
         return slack.response(check_admin(user_id, set_ignore, input_text))
+    elif 'past' in input_text:
+        return slack.response(check_admin(user_id, process_date, input_text))
     else:
         return slack.response(BAD_COMMAND)
 
 def post_attendance_message():
     bot.post_message_with_reactions(ATTENDANCE_MSG)
-    return "OK, posting a message now."
+    return "OK, posting a message now. :carlton:"
+
+def process_date(date, input_text):
+    input_list = input_text.strip().split(' ')
+    date = input_list[1]
+    return bot.process_with_date(date)
 
 def process_all():
     return bot.process_attendance()
