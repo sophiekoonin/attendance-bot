@@ -62,7 +62,7 @@ def post_attendance_message():
     bot.post_message_with_reactions(ATTENDANCE_MSG)
     return "OK, posting a message now. :carlton:"
 
-def process_date(date, input_text):
+def process_date(input_text):
     input_list = input_text.strip().split(' ')
     date = input_list[1]
     return bot.process_with_date(date)
