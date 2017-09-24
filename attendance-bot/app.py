@@ -21,9 +21,10 @@ BAD_DATE = ("Sorry, that date doesn't seem to match up with any of our rehearsal
 BAD_NAME = "Sorry, I couldn't find anyone with that name. :confused:"
 THANKS = "Thanks! I have updated attendance for {real_name} on {date}. :thumbsup:"
 ATTENDANCE_MSG = (":dancing_banana: Rehearsal day! :dancing_banana: <!channel> \n"
-                    "Today we'll be doing *{}*.\n"
+                    "{}"
                     "Please indicate whether or not you can attend tonight by reacting to this message with :thumbsup:"
                   "(present) or :thumbsdown: (absent).\n"
+                  "Facilitator please respond with :raised_hands:!\n"
                   "To volunteer for Physical warm up, respond with :muscle: "
                   "For Musical warm up, respond with :musical_note:.")
 
@@ -62,8 +63,11 @@ def attendance(**kwargs):
         return slack.response(BAD_COMMAND)
 
 def post_attendance_message(input_text):
-    message_text = ' '.join(input_text.strip().split(' ')[1:]).strip();
-    msg = ATTENDANCE_MSG.format(message_text)
+    message_text = ' '.join(input_text.strip().split(' ')[1:]).strip()
+    msg = ATTENDANCE_MSG
+    if len(message_text) > 2:
+        song_info ="Today we'll be doing *{}*.\n".format(message_text)
+        msg = ATTENDANCE_MSG.format(song_info)
     bot.post_message_with_reactions(msg)
     return "OK, posting a message now. :carlton:"
 
